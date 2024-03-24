@@ -15,6 +15,24 @@ import java.util.UUID;
 
 class Util {
 
+    static @NotNull String minutesAndSeconds(long seconds) {
+        final long minutes = seconds / 60;
+        seconds %= 60;
+
+        final StringBuilder sb = new StringBuilder();
+        if (minutes != 0) {
+            sb.append(minutes);
+            sb.append("分");
+        }
+
+        if (seconds != 0 || minutes == 0) {
+            sb.append(seconds);
+            sb.append("秒");
+        }
+
+        return sb.toString();
+    }
+
     static @NotNull TextComponent copyable(@NotNull String text) {
         return Component.text(text).decorate(TextDecoration.UNDERLINED)
                 .clickEvent(ClickEvent.copyToClipboard(text))

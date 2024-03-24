@@ -3,10 +3,14 @@ package cn.paper_card.whitelist;
 import cn.paper_card.MojangProfileApi;
 import cn.paper_card.mc_command.NewMcCommand;
 import cn.paper_card.paper_whitelist.api.AlreadyWhitelistedException;
+import cn.paper_card.paper_whitelist.api.WhitelistCodeInfo;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -33,6 +37,7 @@ class MainCommand extends NewMcCommand.HasSub {
         this.addSub(new AddRemove(true));
         this.addSub(new AddRemove(false));
         this.addSub(new Get());
+        this.addSub(new Code());
     }
 
     @Override
@@ -354,6 +359,97 @@ class MainCommand extends NewMcCommand.HasSub {
                 return tabCompleteOfflinePlayerNames(args[0], plugin.getServer(), false, "<玩家名或UUID>");
             }
 
+            return null;
+        }
+    }
+
+    // todo：未测试
+    class Code extends NewMcCommand {
+
+        private final @NotNull Permission permission;
+
+        protected Code() {
+            super("code");
+            this.permission = this.addSubPermission(
+                    plugin.getServer().getPluginManager(),
+                    MainCommand.this.permission
+            );
+        }
+
+        @Override
+        protected void appendPrefix(TextComponent.@NotNull Builder text) {
+            MainCommand.this.appendPrefix(text);
+        }
+
+        @Override
+        protected boolean canExecute(@NotNull CommandSender commandSender) {
+            return commandSender.hasPermission(this.permission);
+        }
+
+        @Override
+        public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+
+            final Sender ms = new Sender(sender);
+
+            if (!(sender instanceof final Player player)) {
+                ms.error("该命令只能由玩家来执行！");
+                return true;
+            }
+
+            plugin.getTaskScheduler().runTaskAsynchronously(() -> {
+                final WhitelistApiImpl api = plugin.getWhitelistApi();
+                if (api == null) {
+                    ms.error("WhitelistApiImpl is null!");
+                    return;
+                }
+
+                final WhitelistCodeInfo info;
+
+                try {
+                    info = api.getWhitelistCodeService().create(player.getUniqueId(), player.getName());
+                } catch (SQLException e) {
+                    plugin.getSLF4JLogger().error("Fail to crate whitelist code");
+                    ms.error("生成白名单验证码失败！");
+                    ms.exception(e);
+                    return;
+                }
+
+                // 显示验证码
+                final TextComponent.Builder text = Component.text();
+                this.appendPrefix(text);
+                text.appendSpace();
+                text.append(Component.text("您的验证码为（可点击复制）："));
+                text.append(Util.copyable("%d".formatted(info.code()))
+                        .color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD));
+                text.append(Component.text("。"));
+                text.append(Component.text("请不要向其他人泄露您的验证码，否则您的身份可能会被盗用！")
+                        .color(NamedTextColor.RED));
+                text.append(Component.text("验证码有效时间："));
+                text.append(Component.text(Util.minutesAndSeconds(info.expires() - info.createTime()))
+                        .color(NamedTextColor.YELLOW));
+                text.append(Component.text("内，验证码被使用后立即失效。"));
+
+                text.append(Component.text("刷新会生成新的验证码，并且原验证码立即失效"));
+
+                final String cmd = "/%s %s".formatted(
+                        MainCommand.this.getLabel(),
+                        this.getLabel()
+                );
+
+                text.append(Component.text("[立即刷新]")
+                        .color(NamedTextColor.GRAY).decorate(TextDecoration.UNDERLINED)
+                        .clickEvent(ClickEvent.runCommand(cmd))
+                        .hoverEvent(HoverEvent.showText(Component.text("点击执行指令：" + cmd)))
+                );
+
+                sender.sendMessage(text.build().color(NamedTextColor.GREEN));
+            });
+
+            return true;
+        }
+
+        @Override
+        public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
             return null;
         }
     }
