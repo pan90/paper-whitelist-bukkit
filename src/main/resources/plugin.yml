@@ -1,6 +1,6 @@
 name: PaperWhitelist
 version: '${project.version}'
-main: cn.paper_card.paper_whitelist.PluginMain
+main: cn.paper_card.whitelist.PluginMain
 api-version: '1.20'
 author: Paper99
 folia-supported: true

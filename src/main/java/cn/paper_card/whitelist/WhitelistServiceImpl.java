@@ -1,4 +1,4 @@
-package cn.paper_card.paper_whitelist;
+package cn.paper_card.whitelist;
 
 import cn.paper_card.database.api.DatabaseApi;
 import cn.paper_card.paper_whitelist.api.AlreadyWhitelistedException;
