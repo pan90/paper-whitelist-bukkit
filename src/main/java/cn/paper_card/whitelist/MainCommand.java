@@ -425,7 +425,9 @@ class MainCommand extends NewMcCommand.HasSub {
                 text.append(Component.text("请不要向其他人泄露您的验证码，否则您的身份可能会被盗用！")
                         .color(NamedTextColor.RED));
                 text.append(Component.text("验证码有效时间："));
-                text.append(Component.text(Util.minutesAndSeconds(info.expires() - info.createTime()))
+                text.append(Component.text(Util.minutesAndSeconds(
+                                (info.expires() - info.createTime()) / 1000L
+                        ))
                         .color(NamedTextColor.YELLOW));
                 text.append(Component.text("内，验证码被使用后立即失效。"));
 
