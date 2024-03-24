@@ -31,6 +31,7 @@ class MainCommand extends NewMcCommand.HasSub {
 
         this.addSub(new AddRemove(true));
         this.addSub(new AddRemove(false));
+        this.addSub(new Get());
     }
 
     @Override
@@ -208,6 +209,92 @@ class MainCommand extends NewMcCommand.HasSub {
                 } else {
                     this.doRemove(api, profile, sd, sender);
                 }
+            });
+
+            return true;
+        }
+
+        @Override
+        public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+            if (args.length == 1) {
+                return tabCompleteOfflinePlayerNames(args[0], plugin.getServer(), false, "<玩家名或UUID>");
+            }
+
+            return null;
+        }
+    }
+
+
+    // todo: 指令未测试
+    private class Get extends NewMcCommand {
+
+        private final @NotNull Permission permission;
+
+        protected Get() {
+            super("get");
+            this.permission = this.addSubPermission(plugin.getServer().getPluginManager(), MainCommand.this.permission);
+        }
+
+        @Override
+        protected void appendPrefix(TextComponent.@NotNull Builder text) {
+            MainCommand.this.appendPrefix(text);
+        }
+
+        @Override
+        protected boolean canExecute(@NotNull CommandSender commandSender) {
+            return commandSender.hasPermission(this.permission);
+        }
+
+        @Override
+        public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+            final String argPlayer = args.length > 0 ? args[0] : null;
+
+            final Sender sd = new Sender(sender);
+
+            if (argPlayer == null) {
+                sd.error("必须提供参数：玩家名或UUID");
+                return true;
+            }
+
+            if (args.length != 1) {
+                sd.error("只需要1个参数，提供了%d个参数".formatted(args.length));
+                return true;
+            }
+
+            plugin.getTaskScheduler().runTaskAsynchronously(() -> {
+                final OfflinePlayer offlinePlayer = parseOfflinePlayerName(argPlayer, plugin.getServer());
+                if (offlinePlayer == null) {
+                    sd.error("找不到玩家：%s，可能从未进入过服务器！".formatted(argPlayer));
+                    return;
+                }
+
+                final WhitelistApiImpl api = plugin.getWhitelistApi();
+                if (api == null) {
+                    sd.error("WhitelistApiImpl is null!");
+                    return;
+                }
+
+                final WhitelistInfo info;
+                try {
+                    info = api.getWhitelistService().query(offlinePlayer.getUniqueId());
+                } catch (SQLException e) {
+                    plugin.getSLF4JLogger().error("Fail to query whitelist", e);
+                    sd.error("查询白名单失败！");
+                    sd.exception(e);
+                    return;
+                }
+
+                if (info == null) {
+                    sd.info("玩家 %s 未添加白名单".formatted(argPlayer));
+                    return;
+                }
+
+                final TextComponent.Builder text = Component.text();
+                this.appendPrefix(text);
+                text.appendSpace();
+                text.append(Component.text("==== 白名单信息 ===="));
+                Util.appendInfo(text, info, offlinePlayer.getName());
+                sender.sendMessage(text.build().color(NamedTextColor.GREEN));
             });
 
             return true;
