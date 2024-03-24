@@ -38,6 +38,15 @@ class MainCommand extends NewMcCommand.HasSub {
         this.addSub(new AddRemove(false));
         this.addSub(new Get());
         this.addSub(new Code());
+        this.addSub(new CommandList(this));
+    }
+
+    @NotNull PluginMain getPlugin() {
+        return this.plugin;
+    }
+
+    @NotNull Permission getPermission() {
+        return this.permission;
     }
 
     @Override

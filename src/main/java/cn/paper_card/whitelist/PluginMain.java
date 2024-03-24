@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 // 1 查询自己的白名单信息，/whitelist
-// todo: 2 /whitelist list [页码] 指令
+// 2 /whitelist list [页码] 指令
 // 3 /whitelist code 生成自己的白名单验证码
 
 public final class PluginMain extends JavaPlugin {

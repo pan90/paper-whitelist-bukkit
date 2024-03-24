@@ -112,7 +112,7 @@ class WhitelistServiceImpl implements WhitelistService {
     }
 
     @Override
-    public @NotNull List<WhitelistInfo> queryPage(int limit, int offset) {
+    public @NotNull List<WhitelistInfo> queryPage(int limit, int offset) throws SQLException {
         throw new UnsupportedOperationException("TODO！");
     }
 
