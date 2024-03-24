@@ -23,12 +23,9 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
 
     private PreparedStatement statementDeleteByCode = null;
 
-
     private PreparedStatement statementDeleteTimeBefore = null;
 
     private PreparedStatement statementQueryByUuid = null;
-
-    private PreparedStatement statementQueryCount = null;
 
     private final @NotNull String name;
 
@@ -48,7 +45,8 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
                     uid1    BIGINT NOT NULL,
                     uid2    BIGINT NOT NULL,
                     name    VARCHAR(64) NOT NULL,
-                    time    BIGINT NOT NULL,
+                    c_time  BIGINT NOT NULL,
+                    expires BIGINT NOT NULL,
                     PRIMARY KEY(uid1, uid2)
                 )""".formatted(this.name);
         Util.executeSQL(connection, sql2);
@@ -61,7 +59,7 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
     private @NotNull PreparedStatement getStatementInsert() throws SQLException {
         if (this.statementInsert == null) {
             this.statementInsert = this.connection.prepareStatement("""
-                    INSERT INTO %s (code, uid1, uid2, name, time) VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO %s (code, uid1, uid2, name, c_time, expires) VALUES (?, ?, ?, ?, ?, ?)
                     """.formatted(this.name));
         }
         return this.statementInsert;
@@ -71,7 +69,7 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
     private @NotNull PreparedStatement getStatementUpdateByUuid() throws SQLException {
         if (this.statementUpdateByUuid == null) {
             this.statementUpdateByUuid = this.connection.prepareStatement("""
-                    UPDATE %s SET code=?, name=?, time=? WHERE uid1=? AND uid2=? LIMIT 1
+                    UPDATE %s SET code=?, name=?, c_time=?, expires=? WHERE uid1=? AND uid2=? LIMIT 1
                     """.formatted(this.name));
         }
 
@@ -81,7 +79,7 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
     private @NotNull PreparedStatement getStatementQueryByCode() throws SQLException {
         if (this.statementQueryByCode == null) {
             this.statementQueryByCode = this.connection.prepareStatement
-                    ("SELECT code, uid1, uid2, name, time FROM %s WHERE code=? LIMIT 1".formatted(this.name));
+                    ("SELECT code, uid1, uid2, name, c_time, expires FROM %s WHERE code=? LIMIT 1".formatted(this.name));
         }
         return this.statementQueryByCode;
     }
@@ -97,7 +95,7 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
     private @NotNull PreparedStatement getStatementDeleteTimeBefore() throws SQLException {
         if (this.statementDeleteTimeBefore == null) {
             this.statementDeleteTimeBefore = this.connection.prepareStatement
-                    ("DELETE FROM %s WHERE time<?".formatted(this.name));
+                    ("DELETE FROM %s WHERE expires<?".formatted(this.name));
         }
         return this.statementDeleteTimeBefore;
     }
@@ -105,17 +103,9 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
     private @NotNull PreparedStatement getStatementQueryByUuid() throws SQLException {
         if (this.statementQueryByUuid == null) {
             this.statementQueryByUuid = this.connection.prepareStatement
-                    ("SELECT code, uid1, uid2, name, time FROM %s WHERE uid1=? AND uid2=? LIMIT 1".formatted(this.name));
+                    ("SELECT code, uid1, uid2, name, c_time, expires FROM %s WHERE uid1=? AND uid2=? LIMIT 1".formatted(this.name));
         }
         return this.statementQueryByUuid;
-    }
-
-    private @NotNull PreparedStatement getStatementQueryCount() throws SQLException {
-        if (this.statementQueryCount == null) {
-            this.statementQueryCount = this.connection.prepareStatement
-                    ("SELECT count(*) FROM %s".formatted(this.name));
-        }
-        return this.statementQueryCount;
     }
 
     int insert(@NotNull WhitelistCodeInfo info) throws SQLException {
@@ -125,6 +115,7 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
         ps.setLong(3, info.id().getLeastSignificantBits());
         ps.setString(4, info.name());
         ps.setLong(5, info.createTime());
+        ps.setLong(6, info.expires());
         return ps.executeUpdate();
     }
 
@@ -133,8 +124,9 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
         ps.setInt(1, info.code());
         ps.setString(2, info.name());
         ps.setLong(3, info.createTime());
-        ps.setLong(4, info.id().getMostSignificantBits());
-        ps.setLong(5, info.id().getLeastSignificantBits());
+        ps.setLong(4, info.expires());
+        ps.setLong(5, info.id().getMostSignificantBits());
+        ps.setLong(6, info.id().getLeastSignificantBits());
         return ps.executeUpdate();
     }
 
@@ -144,8 +136,9 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
         final long uid1 = resultSet.getLong(2);
         final long uid2 = resultSet.getLong(3);
         final String name = resultSet.getString(4);
-        final long time = resultSet.getLong(5);
-        return new WhitelistCodeInfo(code, new UUID(uid1, uid2), name, time);
+        final long createTime = resultSet.getLong(5);
+        final long expires = resultSet.getLong(6);
+        return new WhitelistCodeInfo(code, new UUID(uid1, uid2), name, createTime, expires);
     }
 
     @Nullable WhitelistCodeInfo queryByCode(int code) throws SQLException {
@@ -173,11 +166,5 @@ class WhitelistCodeTable extends Parser<WhitelistCodeInfo> {
         final PreparedStatement ps = this.getStatementDeleteTimeBefore();
         ps.setLong(1, time);
         return ps.executeUpdate();
-    }
-
-    int queryCount() throws SQLException {
-        final PreparedStatement ps = this.getStatementQueryCount();
-        final ResultSet resultSet = ps.executeQuery();
-        return Parser.parseOneInt(resultSet);
     }
 }

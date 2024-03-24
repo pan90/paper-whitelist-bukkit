@@ -17,7 +17,7 @@ public final class PluginMain extends JavaPlugin {
 
         final DatabaseApi.MySqlConnection connection = api.getRemoteMySQL().getConnectionImportant();
 
-        this.whitelistApi = new WhitelistApiImpl(connection, this::getSLF4JLogger);
+        this.whitelistApi = new WhitelistApiImpl(connection, this);
         this.getServer().getServicesManager().register(PaperWhitelistApi.class, this.whitelistApi, this, ServicePriority.Highest);
     }
 

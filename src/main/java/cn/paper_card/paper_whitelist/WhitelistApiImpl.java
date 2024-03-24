@@ -6,19 +6,18 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
-import java.util.function.Supplier;
 
 class WhitelistApiImpl implements PaperWhitelistApi {
 
     private final @NotNull WhitelistServiceImpl whitelistService;
     private final @NotNull WhitelistCodeServiceImpl whitelistCodeService;
 
-    private final @NotNull Supplier<Logger> logger;
+    private final @NotNull PluginMain plugin;
 
-    WhitelistApiImpl(@NotNull DatabaseApi.MySqlConnection connection, @NotNull Supplier<Logger> logger) {
+    WhitelistApiImpl(@NotNull DatabaseApi.MySqlConnection connection, @NotNull PluginMain plugin) {
         this.whitelistService = new WhitelistServiceImpl(connection);
         this.whitelistCodeService = new WhitelistCodeServiceImpl(connection);
-        this.logger = logger;
+        this.plugin = plugin;
     }
 
     @Override
@@ -32,7 +31,7 @@ class WhitelistApiImpl implements PaperWhitelistApi {
     }
 
     void destroy() {
-        final Logger l = this.logger.get();
+        final Logger l = this.plugin.getSLF4JLogger();
         try {
             this.whitelistService.destroy();
         } catch (SQLException e) {

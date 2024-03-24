@@ -49,29 +49,36 @@ class WhitelistCodeServiceImpl implements WhitelistCodeService {
     }
 
     @Override
-    public int create(@NotNull UUID id, @NotNull String name) throws SQLException {
+    public @NotNull WhitelistCodeInfo create(@NotNull UUID id, @NotNull String name) throws SQLException {
         final int code = this.randomCode();
-        final long time = System.currentTimeMillis();
+        final long cur = System.currentTimeMillis();
         synchronized (this.mySqlConnection) {
             try {
                 final WhitelistCodeTable t = this.getTable();
 
+                t.deleteTimeBefore(cur); // 删除过期的验证码
+
                 // 数据库保证：防止验证码重复
 
-                final WhitelistCodeInfo info = new WhitelistCodeInfo(code, id, name, time);
+                final WhitelistCodeInfo info = new WhitelistCodeInfo(code,
+                        id,
+                        name,
+                        cur,
+                        cur + 2 * 60 * 1000L
+                );
                 final int updated = t.updateByUuid(info);
                 this.mySqlConnection.setLastUseTime();
 
                 if (updated == 1) {
                     this.mySqlConnection.setLastUseTime();
-                    return code;
+                    return info;
                 }
 
                 if (updated == 0) {
                     final int inserted = t.insert(info);
                     this.mySqlConnection.setLastUseTime();
                     if (inserted != 1) throw new RuntimeException();
-                    return code;
+                    return info;
                 }
 
                 throw new RuntimeException();
@@ -114,8 +121,57 @@ class WhitelistCodeServiceImpl implements WhitelistCodeService {
     }
 
     @Override
-    public boolean isOutdated(@NotNull WhitelistCodeInfo info) {
-        long maxAliveTime = 5 * 60 * 1000L;
-        return System.currentTimeMillis() - maxAliveTime > info.createTime();
+    public @Nullable WhitelistCodeInfo query(@NotNull UUID id) throws SQLException {
+        synchronized (this.mySqlConnection) {
+            try {
+                final WhitelistCodeTable t = this.getTable();
+                final WhitelistCodeInfo info = t.queryByUuid(id);
+                this.mySqlConnection.setLastUseTime();
+                return info;
+            } catch (SQLException e) {
+                try {
+                    this.mySqlConnection.handleException(e);
+                } catch (SQLException ignored) {
+                }
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public @Nullable WhitelistCodeInfo take(@NotNull UUID uuid) throws SQLException {
+        synchronized (this.mySqlConnection) {
+            try {
+                final WhitelistCodeTable t = this.getTable();
+                final WhitelistCodeInfo info = t.queryByUuid(uuid);
+                this.mySqlConnection.setLastUseTime();
+                if (info != null) t.deleteByCode(info.code());
+                return info;
+            } catch (SQLException e) {
+                try {
+                    this.mySqlConnection.handleException(e);
+                } catch (SQLException ignored) {
+                }
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public int deleteExpires() throws SQLException {
+        synchronized (this.mySqlConnection) {
+            try {
+                final WhitelistCodeTable t = this.getTable();
+                final int i = t.deleteTimeBefore(System.currentTimeMillis());
+                this.mySqlConnection.setLastUseTime();
+                return i;
+            } catch (SQLException e) {
+                try {
+                    this.mySqlConnection.handleException(e);
+                } catch (SQLException ignored) {
+                }
+                throw e;
+            }
+        }
     }
 }
