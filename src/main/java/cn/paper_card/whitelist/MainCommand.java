@@ -10,6 +10,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +45,53 @@ class MainCommand extends NewMcCommand.HasSub {
         builder.append(Component.text("[").color(NamedTextColor.GRAY));
         builder.append(Component.text("白名单").color(NamedTextColor.DARK_AQUA));
         builder.append(Component.text("]").color(NamedTextColor.GRAY));
+    }
+
+    @Override
+    protected boolean onThisCommand(@NotNull CommandSender sender) {
+        if (!(sender instanceof final Player player)) {
+            return super.onThisCommand(sender);
+        }
+
+        // todo: 未测试
+
+        // 查询自己的白名单
+
+        plugin.getTaskScheduler().runTaskAsynchronously(() -> {
+            final Sender sd = new Sender(sender);
+
+            final WhitelistApiImpl api = plugin.getWhitelistApi();
+            if (api == null) {
+                sd.error("WhitelistApiImpl is null!");
+                return;
+            }
+
+            final WhitelistInfo info;
+            try {
+                info = api.getWhitelistService().query(player.getUniqueId());
+            } catch (SQLException e) {
+                plugin.getSLF4JLogger().error("Fail to query whitelist", e);
+                sd.error("查询白名单失败！");
+                sd.exception(e);
+                return;
+            }
+
+            if (info == null) {
+                sd.info("您未添加白名单");
+                return;
+            }
+
+            final TextComponent.Builder text = Component.text();
+            this.appendPrefix(text);
+            text.appendSpace();
+            text.append(Component.text("==== 您的白名单信息 ===="));
+            Util.appendInfo(text, info, player.getName());
+            sender.sendMessage(text.build().color(NamedTextColor.GREEN));
+
+        });
+
+
+        return true;
     }
 
     private class AddRemove extends NewMcCommand {
