@@ -7,3 +7,11 @@ folia-supported: true
 
 depend:
   - Database
+
+commands:
+  whitelist:
+    permission: paper-whitelist.command
+
+permissions:
+  paper-whitelist.command:
+    default: op

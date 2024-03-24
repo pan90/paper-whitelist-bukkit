@@ -1,13 +1,26 @@
 package cn.paper_card.whitelist;
 
+import cn.paper_card.MojangProfileApi;
 import cn.paper_card.database.api.DatabaseApi;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
+import com.github.Anon8281.universalScheduler.UniversalScheduler;
+import com.github.Anon8281.universalScheduler.scheduling.schedulers.TaskScheduler;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class PluginMain extends JavaPlugin {
 
     private WhitelistApiImpl whitelistApi = null;
+    private final @NotNull TaskScheduler taskScheduler;
+
+    private final @NotNull MojangProfileApi mojangProfileApi;
+
+    public PluginMain() {
+        this.taskScheduler = UniversalScheduler.getScheduler(this);
+        this.mojangProfileApi = new MojangProfileApi();
+    }
 
     void registerApi() {
         if (this.whitelistApi != null) return;
@@ -29,14 +42,31 @@ public final class PluginMain extends JavaPlugin {
     @Override
     public void onEnable() {
         this.registerApi();
+
+        new MainCommand(this).register(this);
     }
 
     @Override
     public void onDisable() {
         final WhitelistApiImpl api = this.whitelistApi;
         this.whitelistApi = null;
+
         this.getServer().getServicesManager().unregisterAll(this);
 
         if (api != null) api.destroy();
+
+        this.taskScheduler.cancelTasks(this);
+    }
+
+    @Nullable WhitelistApiImpl getWhitelistApi() {
+        return this.whitelistApi;
+    }
+
+    @NotNull MojangProfileApi getMojangProfileApi() {
+        return this.mojangProfileApi;
+    }
+
+    @NotNull TaskScheduler getTaskScheduler() {
+        return this.taskScheduler;
     }
 }

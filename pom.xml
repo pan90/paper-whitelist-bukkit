@@ -119,6 +119,23 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.PaperCardDev</groupId>
+            <artifactId>mc-command</artifactId>
+            <version>2.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.PaperCardDev</groupId>
+            <artifactId>mojang-profile-api</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.Anon8281</groupId>
+            <artifactId>UniversalScheduler</artifactId>
+            <version>0.1.6</version>
+        </dependency>
 
     </dependencies>
 </project>
