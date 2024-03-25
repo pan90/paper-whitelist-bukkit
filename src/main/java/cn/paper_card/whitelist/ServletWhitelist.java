@@ -50,8 +50,29 @@ class ServletWhitelist extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         final PluginMain p = this.getPlugin();
-        p.getSLF4JLogger().error("doGet");
-        resp.getWriter().println(2);
+
+        final String uuid = req.getParameter("uuid");
+        final String page = req.getParameter("page");
+        final String size = req.getParameter("size");
+        final String search = req.getParameter("search");
+
+        resp.setCharacterEncoding("utf-8");
+        resp.setContentType("application/json; charset=utf-8");
+
+        if (uuid != null) {
+            final Response response = this.doQueryOne(p, uuid);
+            this.sendResponse(resp, response);
+            return;
+        }
+    }
+
+    void sendResponse(@NotNull HttpServletResponse resp, @NotNull Response response) throws IOException {
+        resp.setCharacterEncoding("utf-8");
+        resp.setContentType("application/json; charset=utf-8");
+
+        final PrintWriter writer = resp.getWriter();
+        writer.print(response.toJson());
+        writer.close();
     }
 
     @Override
@@ -62,12 +83,7 @@ class ServletWhitelist extends HttpServlet {
 
         final Response response = this.doRemoveWhitelist(p, uuid);
 
-        resp.setCharacterEncoding("utf-8");
-        resp.setContentType("application/json; charset=utf-8");
-
-        final PrintWriter writer = resp.getWriter();
-        writer.print(response.toJson());
-        writer.close();
+        this.sendResponse(resp, response);
     }
 
     private @Nullable JsonObject parseJson(@NotNull BufferedReader reader) throws IOException {
@@ -85,12 +101,37 @@ class ServletWhitelist extends HttpServlet {
 
         final Response response = this.doAddWhitelist(json, p);
 
-        resp.setCharacterEncoding("utf-8");
-        resp.setContentType("application/json; charset=utf-8");
+        this.sendResponse(resp, response);
+    }
 
-        final PrintWriter writer = resp.getWriter();
-        writer.print(response.toJson());
-        writer.close();
+    private @NotNull Response doQueryOne(@NotNull PluginMain p, @NotNull String uuidStr) {
+        final UUID uuid;
+
+        try {
+            uuid = UUID.fromString(uuidStr);
+        } catch (IllegalArgumentException e) {
+            return new Response(ErrorCode.IllegalArgument, "非法的UUID：" + uuidStr);
+        }
+
+        final WhitelistApiImpl api = p.getWhitelistApi();
+        if (api == null) {
+            return new Response(ErrorCode.ServiceUnavailable, "WhitelistApiImpl is null!");
+        }
+
+        final WhitelistInfo info;
+
+        try {
+            info = api.getWhitelistService().query(uuid);
+        } catch (SQLException e) {
+            p.getSLF4JLogger().error("Fail to query whitelist", e);
+            return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist: " + e);
+        }
+
+        if (info == null) {
+            return new Response(ErrorCode.NotWhitelist, "未添加白名单");
+        }
+
+        return new Response(ErrorCode.Ok, "OK", Util.toJson(info));
     }
 
     private @NotNull Response doRemoveWhitelist(@NotNull PluginMain p, @Nullable String uuidStr) {
