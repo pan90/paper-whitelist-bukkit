@@ -6,5 +6,6 @@ enum ErrorCode {
     MissingArgument(),
     IllegalArgument(),
     ServiceUnavailable(),
-    AlreadyWhitelisted()
+    AlreadyWhitelisted(),
+    NotWhitelist()
 }

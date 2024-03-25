@@ -57,8 +57,17 @@ class ServletWhitelist extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         final PluginMain p = this.getPlugin();
-        p.getSLF4JLogger().error("doDelete");
-        resp.getWriter().println(1);
+
+        final String uuid = req.getParameter("uuid");
+
+        final Response response = this.doRemoveWhitelist(p, uuid);
+
+        resp.setCharacterEncoding("utf-8");
+        resp.setContentType("application/json; charset=utf-8");
+
+        final PrintWriter writer = resp.getWriter();
+        writer.print(response.toJson());
+        writer.close();
     }
 
     private @Nullable JsonObject parseJson(@NotNull BufferedReader reader) throws IOException {
@@ -82,6 +91,56 @@ class ServletWhitelist extends HttpServlet {
         final PrintWriter writer = resp.getWriter();
         writer.print(response.toJson());
         writer.close();
+    }
+
+    private @NotNull Response doRemoveWhitelist(@NotNull PluginMain p, @Nullable String uuidStr) {
+        if (uuidStr == null) {
+            return new Response(ErrorCode.MissingArgument, "必须提供参数：uuid");
+        }
+
+        final UUID uuid;
+
+        try {
+            uuid = UUID.fromString(uuidStr);
+        } catch (IllegalArgumentException e) {
+            return new Response(ErrorCode.IllegalArgument, "非法的UUID：" + uuidStr);
+        }
+
+        final WhitelistApiImpl api = p.getWhitelistApi();
+
+        if (api == null) {
+            return new Response(ErrorCode.ServiceUnavailable, "WhitelistApiImpl is null!");
+        }
+
+        final WhitelistServiceImpl ser = api.getWhitelistService();
+
+        final WhitelistInfo info;
+
+        try {
+            info = ser.query(uuid);
+        } catch (SQLException e) {
+            p.getSLF4JLogger().error("Fail to query whitelist", e);
+            return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist: " + e);
+        }
+
+        if (info == null) {
+            return new Response(ErrorCode.NotWhitelist, "无需删除，没有添加白名单");
+        }
+
+        final boolean remove;
+
+        try {
+            remove = ser.remove(uuid);
+        } catch (SQLException e) {
+            p.getSLF4JLogger().error("Fail to remove whitelist", e);
+            return new Response(ErrorCode.ServiceUnavailable, "Fail to remove whitelist: " + e);
+        }
+
+        if (!remove) {
+            return new Response(ErrorCode.Ok, "没有数据被删除", Util.toJson(info));
+        } else {
+            return new Response(ErrorCode.Ok, "已删除白名单", Util.toJson(info));
+        }
     }
 
     private @NotNull Response doAddWhitelist(@Nullable JsonObject json, @NotNull PluginMain p) {

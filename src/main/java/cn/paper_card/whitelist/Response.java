@@ -11,12 +11,6 @@ record Response(
         @Nullable JsonObject data
 ) {
 
-    Response(@NotNull ErrorCode errorCode, @NotNull String errorMessage, @Nullable JsonObject data) {
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
-        this.data = data;
-    }
-
     Response(@NotNull ErrorCode errorCode, @NotNull String errorMessage) {
         this(errorCode, errorMessage, null);
     }
