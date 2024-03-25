@@ -163,7 +163,8 @@ class ServletWhitelist extends HttpServlet {
 
             final JsonArray array = new JsonArray();
             for (WhitelistInfo info : list) {
-                array.add(Util.toJson(info));
+                final JsonObject json = Util.toJson(info, p.getServer());
+                array.add(json);
             }
 
             final JsonObject jsonObject = new JsonObject();
@@ -203,7 +204,7 @@ class ServletWhitelist extends HttpServlet {
             return new Response(ErrorCode.NotWhitelist, "未添加白名单");
         }
 
-        return new Response(ErrorCode.Ok, "OK", Util.toJson(info));
+        return new Response(ErrorCode.Ok, "OK", Util.toJson(info, p.getServer()));
     }
 
     private @NotNull Response doRemoveWhitelist(@NotNull PluginMain p, @Nullable String uuidStr) {
@@ -250,9 +251,9 @@ class ServletWhitelist extends HttpServlet {
         }
 
         if (!remove) {
-            return new Response(ErrorCode.Ok, "没有数据被删除", Util.toJson(info));
+            return new Response(ErrorCode.Ok, "没有数据被删除", Util.toJson(info, p.getServer()));
         } else {
-            return new Response(ErrorCode.Ok, "已删除白名单", Util.toJson(info));
+            return new Response(ErrorCode.Ok, "已删除白名单", Util.toJson(info, p.getServer()));
         }
     }
 
@@ -342,9 +343,9 @@ class ServletWhitelist extends HttpServlet {
             p.getSLF4JLogger().error("Fail to add whitelist", e);
             return new Response(ErrorCode.ServiceUnavailable, e.toString());
         } catch (AlreadyWhitelistedException e) {
-            return new Response(ErrorCode.AlreadyWhitelisted, "已经是白名单，无需重复添加", Util.toJson(e.getWhitelistInfo()));
+            return new Response(ErrorCode.AlreadyWhitelisted, "已经是白名单，无需重复添加", Util.toJson(e.getWhitelistInfo(), p.getServer()));
         }
 
-        return new Response(ErrorCode.Ok, "OK", Util.toJson(info));
+        return new Response(ErrorCode.Ok, "OK", Util.toJson(info, p.getServer()));
     }
 }

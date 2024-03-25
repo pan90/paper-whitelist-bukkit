@@ -8,6 +8,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,11 +17,13 @@ import java.util.UUID;
 
 class Util {
 
-    static @NotNull JsonObject toJson(@NotNull WhitelistInfo info) {
+    static @NotNull JsonObject toJson(@NotNull WhitelistInfo info, @NotNull Server server) {
         final JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("uuid", info.userId().toString());
         jsonObject.addProperty("remark", info.remark());
         jsonObject.addProperty("create_time", info.createTime());
+        final String name = server.getOfflinePlayer(info.userId()).getName();
+        jsonObject.addProperty("name", name);
         return jsonObject;
     }
 
