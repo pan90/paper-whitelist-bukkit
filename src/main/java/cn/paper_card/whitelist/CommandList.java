@@ -97,7 +97,7 @@ class CommandList extends NewMcCommand {
             final TextComponent.Builder text = Component.text();
             this.appendPrefix(text);
             text.appendSpace();
-            text.append(Component.text("==== 白名单信息 | 第%d页 ===="));
+            text.append(Component.text("==== 白名单信息 | 第%d页 ====".formatted(pageNo)));
 
             final int size = list.size();
             if (size == 0) {

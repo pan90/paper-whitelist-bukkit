@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 // 1 查询自己的白名单信息，/whitelist
 // 2 /whitelist list [页码] 指令
 // 3 /whitelist code 生成自己的白名单验证码
+// todo: whitelist list 命令应该可以显示共多少页
 // todo: 完善白名单验证码拒绝页面
 // todo: 并未测试没有PaperJetty插件的情况
 // todo: 未考虑到没哟PaperPreLogin插件的情况

@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
 
 class WhitelistTable extends Parser<WhitelistInfo> {
@@ -22,6 +23,8 @@ class WhitelistTable extends Parser<WhitelistInfo> {
     private PreparedStatement psDelete = null;
 
     private PreparedStatement psQuery = null;
+
+    private PreparedStatement psQueryPage = null;
 
     WhitelistTable(@NotNull Connection connection, @NotNull String name) throws SQLException {
         this.connection = connection;
@@ -70,9 +73,20 @@ class WhitelistTable extends Parser<WhitelistInfo> {
             this.psQuery = this.connection.prepareStatement("""
                     SELECT uid1, uid2, remark, c_time
                     FROM %s
-                    WHERE (uid1, uid2) = (?, ?);""".formatted(this.name));
+                    WHERE (uid1, uid2) = (?, ?) LIMIT 1;""".formatted(this.name));
         }
         return this.psQuery;
+    }
+
+    private @NotNull PreparedStatement getPsQueryPage() throws SQLException {
+        if (this.psQueryPage == null) {
+            this.psQueryPage = this.connection.prepareStatement("""
+                    SELECT uid1, uid2, remark, c_time
+                    FROM %s
+                    ORDER BY c_time DESC
+                    LIMIT ? OFFSET ?;""".formatted(this.name));
+        }
+        return this.psQueryPage;
     }
 
     @Nullable WhitelistInfo query(@NotNull UUID userId) throws SQLException {
@@ -81,6 +95,14 @@ class WhitelistTable extends Parser<WhitelistInfo> {
         ps.setLong(2, userId.getLeastSignificantBits());
         final ResultSet resultSet = ps.executeQuery();
         return this.parseOne(resultSet);
+    }
+
+    @NotNull List<WhitelistInfo> queryPage(int limit, int offset) throws SQLException {
+        final PreparedStatement ps = this.getPsQueryPage();
+        ps.setInt(1, limit);
+        ps.setInt(2, offset);
+        final ResultSet resultSet = ps.executeQuery();
+        return this.parseAll(resultSet);
     }
 
     int delete(@NotNull UUID userId) throws SQLException {

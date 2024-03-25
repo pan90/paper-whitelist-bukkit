@@ -111,10 +111,24 @@ class WhitelistServiceImpl implements WhitelistService {
         }
     }
 
-    // todo: UnsupportedOperationException
     @Override
     public @NotNull List<WhitelistInfo> queryPage(int limit, int offset) throws SQLException {
-        throw new UnsupportedOperationException("TODO！");
+        synchronized (this.mySqlConnection) {
+            try {
+                final WhitelistTable t = this.getTable();
+
+                final List<WhitelistInfo> list = t.queryPage(limit, offset);
+                this.mySqlConnection.setLastUseTime();
+
+                return list;
+            } catch (SQLException e) {
+                try {
+                    this.mySqlConnection.handleException(e);
+                } catch (SQLException ignored) {
+                }
+                throw e;
+            }
+        }
     }
 
     @Override
