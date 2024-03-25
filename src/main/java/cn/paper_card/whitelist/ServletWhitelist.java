@@ -5,6 +5,7 @@ import cn.paper_card.mc_command.NewMcCommand;
 import cn.paper_card.paper_whitelist.api.AlreadyWhitelistedException;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.servlet.ServletException;
@@ -19,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
 
 class ServletWhitelist extends HttpServlet {
@@ -52,15 +54,18 @@ class ServletWhitelist extends HttpServlet {
         final PluginMain p = this.getPlugin();
 
         final String uuid = req.getParameter("uuid");
-        final String page = req.getParameter("page");
-        final String size = req.getParameter("size");
-        final String search = req.getParameter("search");
 
+        final Response response;
         if (uuid != null) {
-            final Response response = this.doQueryOne(p, uuid);
-            this.sendResponse(resp, response);
-            return;
+            response = this.doQueryOne(p, uuid);
+        } else {
+            response = this.doQueryPage(req.getParameter("page"),
+                    req.getParameter("size"),
+                    req.getParameter("search"),
+                    p
+            );
         }
+        this.sendResponse(resp, response);
     }
 
     void sendResponse(@NotNull HttpServletResponse resp, @NotNull Response response) throws IOException {
@@ -99,6 +104,76 @@ class ServletWhitelist extends HttpServlet {
         final Response response = this.doAddWhitelist(json, p);
 
         this.sendResponse(resp, response);
+    }
+
+    private @NotNull Response doQueryPage(@Nullable String argPage, @Nullable String argSize, @Nullable String argSearch, @NotNull PluginMain p) {
+        if (argPage == null) {
+            return new Response(ErrorCode.MissingArgument, "必须提供参数：page（页码）");
+        }
+
+        if (argSize == null) {
+            return new Response(ErrorCode.MissingArgument, "必须提供参数：size（每页数量）");
+        }
+
+        final int page;
+        final int size;
+
+        try {
+            page = Integer.parseInt(argPage);
+
+            if (page <= 0) return new Response(ErrorCode.IllegalArgument, "page应该是正整数！");
+        } catch (NumberFormatException e) {
+            return new Response(ErrorCode.IllegalArgument, "不正确的page参数：" + argPage);
+        }
+
+        try {
+            size = Integer.parseInt(argSize);
+
+            if (size <= 0) return new Response(ErrorCode.IllegalArgument, "size应该是正整数！");
+        } catch (NumberFormatException e) {
+            return new Response(ErrorCode.IllegalArgument, "不正确的size参数：" + argSize);
+        }
+
+        final WhitelistApiImpl api = p.getWhitelistApi();
+        if (api == null) {
+            return new Response(ErrorCode.ServiceUnavailable, "WhitelistApiImpl is null!");
+        }
+
+        final WhitelistServiceImpl service = api.getWhitelistService();
+
+        final int count;
+
+        try {
+            count = service.queryCount();
+        } catch (SQLException e) {
+            p.getSLF4JLogger().error("Fail to query whitelist count", e);
+            return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist count: " + e);
+        }
+
+        if (argSearch == null) {
+
+            final List<WhitelistInfo> list;
+
+            try {
+                list = service.queryPage(size, (page - 1) * size);
+            } catch (SQLException e) {
+                p.getSLF4JLogger().error("Fail to query whitelist", e);
+                return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist: " + e);
+            }
+
+            final JsonArray array = new JsonArray();
+            for (WhitelistInfo info : list) {
+                array.add(Util.toJson(info));
+            }
+
+            final JsonObject jsonObject = new JsonObject();
+            jsonObject.add("list", array);
+            jsonObject.addProperty("total", count);
+            return new Response(ErrorCode.Ok, "OK", jsonObject);
+        } else {
+            // todo
+            return new Response(ErrorCode.ServiceUnavailable, "TODO");
+        }
     }
 
     private @NotNull Response doQueryOne(@NotNull PluginMain p, @NotNull String uuidStr) {
