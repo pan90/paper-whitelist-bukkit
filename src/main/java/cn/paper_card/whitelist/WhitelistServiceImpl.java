@@ -111,6 +111,7 @@ class WhitelistServiceImpl implements WhitelistService {
         }
     }
 
+    // todo: UnsupportedOperationException
     @Override
     public @NotNull List<WhitelistInfo> queryPage(int limit, int offset) throws SQLException {
         throw new UnsupportedOperationException("TODO！");

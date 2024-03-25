@@ -67,8 +67,6 @@ class MainCommand extends NewMcCommand.HasSub {
             return super.onThisCommand(sender);
         }
 
-        // todo: 未测试
-
         // 查询自己的白名单
 
         plugin.getTaskScheduler().runTaskAsynchronously(() -> {
@@ -287,7 +285,6 @@ class MainCommand extends NewMcCommand.HasSub {
     }
 
 
-    // todo: 指令未测试
     private class Get extends NewMcCommand {
 
         private final @NotNull Permission permission;
@@ -372,7 +369,6 @@ class MainCommand extends NewMcCommand.HasSub {
         }
     }
 
-    // todo：未测试
     class Code extends NewMcCommand {
 
         private final @NotNull Permission permission;

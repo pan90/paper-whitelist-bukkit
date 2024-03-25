@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.List;
 
 // /whitelist list [页码] 指令
-// todo: 未测试
 class CommandList extends NewMcCommand {
     private final @NotNull Permission permission;
 
