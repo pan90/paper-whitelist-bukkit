@@ -40,6 +40,7 @@ class WhitelistApiImpl implements PaperWhitelistApi {
         handler.setAttribute("plugin", this.plugin);
         handler.setContextPath("/api");
         handler.addServlet(new ServletHolder(new ServletWhitelist()), "/whitelist");
+        handler.addServlet(new ServletHolder(new ServletWhitelistCode()), "/whitelist-code");
         return handler;
     }
 

@@ -1,5 +1,6 @@
 package cn.paper_card.whitelist;
 
+import cn.paper_card.paper_whitelist.api.WhitelistCodeInfo;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
 import com.google.gson.JsonObject;
 import net.kyori.adventure.text.Component;
@@ -24,6 +25,16 @@ class Util {
         jsonObject.addProperty("create_time", info.createTime());
         final String name = server.getOfflinePlayer(info.userId()).getName();
         jsonObject.addProperty("name", name);
+        return jsonObject;
+    }
+
+    static @NotNull JsonObject toJson(@NotNull WhitelistCodeInfo info) {
+        final JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("code", info.code());
+        jsonObject.addProperty("name", info.name());
+        jsonObject.addProperty("uuid", info.id().toString());
+        jsonObject.addProperty("create_time", info.createTime());
+        jsonObject.addProperty("expires", info.expires());
         return jsonObject;
     }
 
