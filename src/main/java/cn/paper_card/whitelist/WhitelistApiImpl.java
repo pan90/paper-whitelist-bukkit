@@ -2,6 +2,8 @@ package cn.paper_card.whitelist;
 
 import cn.paper_card.database.api.DatabaseApi;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
+import net.kyori.adventure.text.TextComponent;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.jetbrains.annotations.NotNull;
@@ -17,10 +19,13 @@ class WhitelistApiImpl implements PaperWhitelistApi {
 
     private final @NotNull PluginMain plugin;
 
+    private final @NotNull OnPreLogin onPreLogin;
+
     WhitelistApiImpl(@NotNull DatabaseApi.MySqlConnection connection, @NotNull PluginMain plugin) {
         this.whitelistService = new WhitelistServiceImpl(connection);
         this.whitelistCodeService = new WhitelistCodeServiceImpl(connection);
         this.plugin = plugin;
+        this.onPreLogin = new OnPreLogin(plugin);
     }
 
     @Override
@@ -44,9 +49,17 @@ class WhitelistApiImpl implements PaperWhitelistApi {
         return handler;
     }
 
+    void onPreLogin(@NotNull AsyncPlayerPreLoginEvent event, @Nullable TextComponent suffix) {
+        this.onPreLogin.onPreLogin(event, suffix);
+    }
+
     @Override
     public void onPreLoginCheck(@NotNull Object event, @Nullable Object suffix) {
-        // todo
+        if (suffix instanceof TextComponent tc) {
+            this.onPreLogin((AsyncPlayerPreLoginEvent) event, tc);
+        } else {
+            this.onPreLogin((AsyncPlayerPreLoginEvent) event, null);
+        }
     }
 
     void destroy() {
