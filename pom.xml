@@ -109,7 +109,7 @@
         <dependency>
             <groupId>com.github.PaperCardDev</groupId>
             <artifactId>paper-whitelist-api</artifactId>
-            <version>4.1</version>
+            <version>4.2</version>
         </dependency>
 
         <dependency>
@@ -135,6 +135,14 @@
             <groupId>com.github.Anon8281</groupId>
             <artifactId>UniversalScheduler</artifactId>
             <version>0.1.6</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-servlet -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>11.0.20</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->

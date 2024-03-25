@@ -1,6 +1,7 @@
 package cn.paper_card.whitelist;
 
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
+import com.google.gson.JsonObject;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -14,6 +15,14 @@ import java.text.SimpleDateFormat;
 import java.util.UUID;
 
 class Util {
+
+    static @NotNull JsonObject toJson(@NotNull WhitelistInfo info) {
+        final JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("uuid", info.userId().toString());
+        jsonObject.addProperty("remark", info.remark());
+        jsonObject.addProperty("create_time", info.createTime());
+        return jsonObject;
+    }
 
     static @NotNull String minutesAndSeconds(long seconds) {
         final long minutes = seconds / 60;

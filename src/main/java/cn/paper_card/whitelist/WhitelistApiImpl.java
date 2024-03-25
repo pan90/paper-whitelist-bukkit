@@ -2,7 +2,10 @@ package cn.paper_card.whitelist;
 
 import cn.paper_card.database.api.DatabaseApi;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
@@ -28,6 +31,21 @@ class WhitelistApiImpl implements PaperWhitelistApi {
     @Override
     public @NotNull WhitelistCodeServiceImpl getWhitelistCodeService() {
         return this.whitelistCodeService;
+    }
+
+
+    @Override
+    public @Nullable Object getServletContextHandler() {
+        final ServletContextHandler handler = new ServletContextHandler();
+        handler.setAttribute("plugin", this.plugin);
+        handler.setContextPath("/api");
+        handler.addServlet(new ServletHolder(new ServletWhitelist()), "/whitelist");
+        return handler;
+    }
+
+    @Override
+    public void onPreLoginCheck(@NotNull Object event, @Nullable Object suffix) {
+        // todo
     }
 
     void destroy() {
