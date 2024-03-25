@@ -12,7 +12,6 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.naming.Name;
 import java.util.UUID;
 
 class OnPreLogin implements Listener {
@@ -61,7 +60,7 @@ class OnPreLogin implements Listener {
                 .color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD));
 
         text.appendNewline();
-        text.append(Component.text("您尚未添加白名单！").color(NamedTextColor.YELLOW));
+        text.append(Component.text("您尚未添加白名单，请先申请白名单").color(NamedTextColor.YELLOW));
 
         text.appendNewline();
         text.append(Component.text("您的验证码：").color(NamedTextColor.GREEN));
@@ -85,7 +84,7 @@ class OnPreLogin implements Listener {
         text.append(Component.text("内，被使用后立即失效"));
 
         text.appendNewline();
-        text.append(Component.text("刷新会生成新的验证码，并且原验证码立即失效").color(NamedTextColor.YELLOW));
+        text.append(Component.text("重连将生成新验证码，并且原验证码立即失效").color(NamedTextColor.YELLOW));
 
         this.appendPlayerAndTime(text, event.getName(), event.getUniqueId());
 
@@ -127,7 +126,7 @@ class OnPreLogin implements Listener {
             this.kickWhenException(event, e);
             return;
         }
-        
+
         this.kickWhitelistCode(event, code, suffix);
     }
 
