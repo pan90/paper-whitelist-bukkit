@@ -26,6 +26,8 @@ class WhitelistTable extends Parser<WhitelistInfo> {
 
     private PreparedStatement psQueryPage = null;
 
+    private PreparedStatement psQueryCount = null;
+
     WhitelistTable(@NotNull Connection connection, @NotNull String name) throws SQLException {
         this.connection = connection;
         this.name = name;
@@ -87,6 +89,21 @@ class WhitelistTable extends Parser<WhitelistInfo> {
                     LIMIT ? OFFSET ?;""".formatted(this.name));
         }
         return this.psQueryPage;
+    }
+
+    private @NotNull PreparedStatement getPsQueryCount() throws SQLException {
+        if (this.psQueryCount == null) {
+            this.psQueryCount = this.connection.prepareStatement("""
+                    SELECT count(*)
+                    FROM %s;""".formatted(this.name));
+        }
+        return this.psQueryCount;
+    }
+
+    int queryCount() throws SQLException {
+        final PreparedStatement ps = this.getPsQueryCount();
+        final ResultSet resultSet = ps.executeQuery();
+        return Parser.parseOneInt(resultSet);
     }
 
     @Nullable WhitelistInfo query(@NotNull UUID userId) throws SQLException {

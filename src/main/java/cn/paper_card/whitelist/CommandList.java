@@ -83,6 +83,17 @@ class CommandList extends NewMcCommand {
                 return;
             }
 
+            final int count;
+
+            try {
+                count = api.getWhitelistService().queryCount();
+            } catch (SQLException e) {
+                p.getSLF4JLogger().error("Fail to query whitelist count", e);
+                ms.error("查询白名单个数失败！");
+                ms.exception(e);
+                return;
+            }
+
             final List<WhitelistInfo> list;
 
             try {
@@ -94,10 +105,20 @@ class CommandList extends NewMcCommand {
                 return;
             }
 
+            int pageCount;
+            pageCount = count / pageSize;
+
+            /*
+//            if ((count % pageSize) == 0) {
+//                pageCount += 1;
+//            }
+             */
+
+
             final TextComponent.Builder text = Component.text();
             this.appendPrefix(text);
             text.appendSpace();
-            text.append(Component.text("==== 白名单信息 | 第%d页 ====".formatted(pageNo)));
+            text.append(Component.text("==== 白名单信息 | 第%d页，共%d页 ====".formatted(pageNo, pageCount)));
 
             final int size = list.size();
             if (size == 0) {
@@ -124,7 +145,7 @@ class CommandList extends NewMcCommand {
             );
             text.appendSpace();
 
-            final boolean noNext = size < pageSize;
+            final boolean noNext = size < pageSize || pageNo >= pageCount;
             final String nextCmd = "/%s %s %d".formatted(
                     this.parentCmd.getLabel(),
                     this.getLabel(),

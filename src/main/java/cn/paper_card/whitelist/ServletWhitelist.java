@@ -55,7 +55,7 @@ class ServletWhitelist extends HttpServlet {
         final String page = req.getParameter("page");
         final String size = req.getParameter("size");
         final String search = req.getParameter("search");
-        
+
         if (uuid != null) {
             final Response response = this.doQueryOne(p, uuid);
             this.sendResponse(resp, response);

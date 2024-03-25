@@ -131,6 +131,24 @@ class WhitelistServiceImpl implements WhitelistService {
         }
     }
 
+
+    public int queryCount() throws SQLException {
+        synchronized (this.mySqlConnection) {
+            try {
+                final WhitelistTable t = this.getTable();
+                final int count = t.queryCount();
+                this.mySqlConnection.setLastUseTime();
+                return count;
+            } catch (SQLException e) {
+                try {
+                    this.mySqlConnection.handleException(e);
+                } catch (SQLException ignored) {
+                }
+                throw e;
+            }
+        }
+    }
+
     @Override
     public @NotNull List<WhitelistInfo> search(@NotNull String keyWord, int limit, int offset) {
         throw new UnsupportedOperationException("TODO！");
