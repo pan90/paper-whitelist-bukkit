@@ -53,7 +53,7 @@ class OnPreLogin implements Listener {
         event.kickMessage(text.build());
     }
 
-    void kickWhitelistCode(@NotNull AsyncPlayerPreLoginEvent event, @NotNull WhitelistCodeInfo info, @Nullable TextComponent suffix) {
+    void kickWhitelistCode(@NotNull AsyncPlayerPreLoginEvent event, @Nullable WhitelistCodeInfo info, @Nullable TextComponent suffix) {
         final TextComponent.Builder text = Component.text();
 
         text.append(Component.text("[ PaperCard | 白名单 ]")
@@ -62,29 +62,32 @@ class OnPreLogin implements Listener {
         text.appendNewline();
         text.append(Component.text("您尚未添加白名单，请先申请白名单").color(NamedTextColor.YELLOW));
 
-        text.appendNewline();
-        text.append(Component.text("您的验证码：").color(NamedTextColor.GREEN));
-        text.append(Component.text(info.code()).decorate(TextDecoration.BOLD).color(NamedTextColor.GOLD));
-
         if (suffix != null) {
             text.appendNewline();
             text.append(suffix);
         }
 
-        text.appendNewline();
-        text.append(Component.text("请不要向其他人泄露您的验证码，否则您的身份可能会被盗用！")
-                .color(NamedTextColor.RED));
+        if (info != null) {
 
-        text.appendNewline();
-        text.append(Component.text("验证码有效时间："));
-        text.append(Component.text(Util.minutesAndSeconds(
-                        (info.expires() - info.createTime())
-                ))
-                .color(NamedTextColor.YELLOW));
-        text.append(Component.text("内，被使用后立即失效"));
+            text.appendNewline();
+            text.append(Component.text("您的登录验证码：").color(NamedTextColor.GREEN));
+            text.append(Component.text(info.code()).decorate(TextDecoration.BOLD).color(NamedTextColor.GOLD));
 
-        text.appendNewline();
-        text.append(Component.text("重连将生成新验证码，并且原验证码立即失效").color(NamedTextColor.YELLOW));
+            text.appendNewline();
+            text.append(Component.text("请不要向其他人泄露您的验证码，否则您的身份可能会被盗用！")
+                    .color(NamedTextColor.RED));
+
+            text.appendNewline();
+            text.append(Component.text("验证码有效时间："));
+            text.append(Component.text(Util.minutesAndSeconds(
+                            (info.expires() - info.createTime())
+                    ))
+                    .color(NamedTextColor.YELLOW));
+            text.append(Component.text("内，被使用后立即失效"));
+
+            text.appendNewline();
+            text.append(Component.text("重连将生成新验证码，并且原验证码立即失效").color(NamedTextColor.YELLOW));
+        }
 
         this.appendPlayerAndTime(text, event.getName(), event.getUniqueId());
 
@@ -120,18 +123,23 @@ class OnPreLogin implements Listener {
         // 非白名单
 
         // 生成验证码
-        final WhitelistCodeInfo code;
+        if (plugin.getConfigManager().isGenerateCode()) {
+            final WhitelistCodeInfo code;
 
-        try {
-            code = api.getWhitelistCodeService().create(event.getUniqueId(), event.getName());
-        } catch (Exception e) {
-            final String msg = "生成白名单验证码失败！";
-            this.plugin.getSLF4JLogger().error(msg, e);
-            this.kickWhenException(event, new Exception(msg, e));
-            return;
+            try {
+                code = api.getWhitelistCodeService().create(event.getUniqueId(), event.getName());
+            } catch (Exception e) {
+                final String msg = "生成白名单验证码失败！";
+                this.plugin.getSLF4JLogger().error(msg, e);
+
+//                this.kickWhenException(event, new Exception(msg, e));
+                this.kickWhitelistCode(event, null, suffix);
+                return;
+            }
+            this.kickWhitelistCode(event, code, suffix);
+        } else {
+            this.kickWhitelistCode(event, null, suffix);
         }
-
-        this.kickWhitelistCode(event, code, suffix);
     }
 
     @EventHandler
