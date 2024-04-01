@@ -95,6 +95,10 @@ class WhitelistServiceImpl implements WhitelistService {
 
     @Override
     public @Nullable WhitelistInfo query(@NotNull UUID userId) throws SQLException {
+
+        // 网络查询
+        
+
         synchronized (this.mySqlConnection) {
             try {
                 final WhitelistTable t = this.getTable();

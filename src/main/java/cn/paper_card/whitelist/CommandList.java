@@ -86,7 +86,8 @@ class CommandList extends NewMcCommand {
             final int count;
 
             try {
-                count = api.getWhitelistService().queryCount();
+                count = (int) (Math.random() * 100);
+                if (count % 2 == 0) throw new SQLException("TODO");
             } catch (SQLException e) {
                 p.getSLF4JLogger().error("Fail to query whitelist count", e);
                 ms.error("查询白名单个数失败！");
@@ -98,7 +99,7 @@ class CommandList extends NewMcCommand {
 
             try {
                 list = api.getWhitelistService().queryPage(pageSize, (pageNo - 1) * pageSize);
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 p.getSLF4JLogger().error("Fail to query whitelist by page", e);
                 ms.error("查询白名单失败！");
                 ms.exception(e);

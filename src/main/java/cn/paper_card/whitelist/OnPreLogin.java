@@ -78,7 +78,7 @@ class OnPreLogin implements Listener {
         text.appendNewline();
         text.append(Component.text("验证码有效时间："));
         text.append(Component.text(Util.minutesAndSeconds(
-                        (info.expires() - info.createTime()) / 1000L
+                        (info.expires() - info.createTime())
                 ))
                 .color(NamedTextColor.YELLOW));
         text.append(Component.text("内，被使用后立即失效"));
@@ -104,7 +104,9 @@ class OnPreLogin implements Listener {
         try {
             whitelistInfo = api.getWhitelistService().query(event.getUniqueId());
         } catch (Exception e) {
-            this.kickWhenException(event, e);
+            final String msg = "无法查询白名单！";
+            this.plugin.getSLF4JLogger().error(msg, e);
+            this.kickWhenException(event, new Exception(msg, e));
             return;
         }
 
@@ -123,7 +125,9 @@ class OnPreLogin implements Listener {
         try {
             code = api.getWhitelistCodeService().create(event.getUniqueId(), event.getName());
         } catch (Exception e) {
-            this.kickWhenException(event, e);
+            final String msg = "生成白名单验证码失败！";
+            this.plugin.getSLF4JLogger().error(msg, e);
+            this.kickWhenException(event, new Exception(msg, e));
             return;
         }
 

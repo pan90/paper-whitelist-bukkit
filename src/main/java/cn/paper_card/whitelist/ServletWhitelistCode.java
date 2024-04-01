@@ -1,6 +1,7 @@
 package cn.paper_card.whitelist;
 
 import cn.paper_card.paper_whitelist.api.WhitelistCodeInfo;
+import cn.paper_card.paper_whitelist.api.WhitelistCodeService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -74,13 +75,13 @@ class ServletWhitelistCode extends HttpServlet {
             return new Response(ErrorCode.ServiceUnavailable, "WhitelistApiImpl is null!");
         }
 
-        final WhitelistCodeServiceImpl service = api.getWhitelistCodeService();
+        final WhitelistCodeService service = api.getWhitelistCodeService();
 
         final WhitelistCodeInfo codeInfo;
 
         try {
             codeInfo = service.take(code);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             p.getSLF4JLogger().error("Fail to take code", e);
             return new Response(ErrorCode.ServiceUnavailable, "Fail to take code: " + e);
         }

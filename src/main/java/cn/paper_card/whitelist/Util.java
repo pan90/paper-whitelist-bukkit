@@ -13,10 +13,75 @@ import org.bukkit.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.UUID;
 
 class Util {
+
+    static void close(@NotNull InputStream inputStream, @NotNull InputStreamReader inputStreamReader, @NotNull BufferedReader reader) throws IOException {
+        IOException exception = null;
+        try {
+            reader.close();
+        } catch (IOException e) {
+            exception = e;
+        }
+
+        try {
+            inputStreamReader.close();
+        } catch (IOException e) {
+            exception = e;
+        }
+
+        try {
+            inputStream.close();
+        } catch (IOException e) {
+            exception = e;
+        }
+
+        if (exception != null) throw exception;
+    }
+
+    static void send(@NotNull HttpURLConnection connection, @NotNull Object data) throws IOException {
+        final OutputStream out = connection.getOutputStream();
+
+        final PrintStream stream = new PrintStream(out, false, StandardCharsets.UTF_8);
+
+        stream.print(data);
+        stream.flush();
+
+        stream.close();
+        out.close();
+    }
+
+    static @NotNull String readContent(@NotNull HttpURLConnection connection) throws IOException {
+        final InputStream inputStream = connection.getInputStream();
+        final InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        final BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+        String line;
+
+        final StringBuilder builder = new StringBuilder();
+
+        try {
+            while ((line = bufferedReader.readLine()) != null) {
+                builder.append(line);
+                builder.append('\n');
+            }
+        } catch (IOException e) {
+            try {
+                close(inputStream, inputStreamReader, bufferedReader);
+            } catch (IOException ignored) {
+            }
+            throw e;
+        }
+
+        close(inputStream, inputStreamReader, bufferedReader);
+
+        return builder.toString();
+    }
 
     static @NotNull JsonObject toJson(@NotNull WhitelistInfo info, @NotNull Server server) {
         final JsonObject jsonObject = new JsonObject();

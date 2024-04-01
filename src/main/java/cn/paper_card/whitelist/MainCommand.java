@@ -2,7 +2,6 @@ package cn.paper_card.whitelist;
 
 import cn.paper_card.MojangProfileApi;
 import cn.paper_card.mc_command.NewMcCommand;
-import cn.paper_card.paper_whitelist.api.AlreadyWhitelistedException;
 import cn.paper_card.paper_whitelist.api.WhitelistCodeInfo;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
 import net.kyori.adventure.text.Component;
@@ -81,7 +80,7 @@ class MainCommand extends NewMcCommand.HasSub {
             final WhitelistInfo info;
             try {
                 info = api.getWhitelistService().query(player.getUniqueId());
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 plugin.getSLF4JLogger().error("Fail to query whitelist", e);
                 sd.error("查询白名单失败！");
                 sd.exception(e);
@@ -144,16 +143,19 @@ class MainCommand extends NewMcCommand.HasSub {
 
             try {
                 api.getWhitelistService().add(info);
-            } catch (SQLException e) {
+            }
+//            catch (AlreadyWhitelistedException e) {
+//
+//                sd.warning("该玩家 %s 已添加白名单，无需重复添加".formatted(argPlayer));
+//
+//                return;
+//            }
+            catch (Exception e) {
                 plugin.getSLF4JLogger().error("Fail to add whitelist", e);
                 sd.error("添加白名单失败！");
                 sd.exception(e);
                 return;
-            } catch (AlreadyWhitelistedException e) {
-                sd.warning("该玩家 %s 已添加白名单，无需重复添加".formatted(argPlayer));
-                return;
             }
-
             final TextComponent.Builder text = Component.text();
             this.appendPrefix(text);
             text.appendSpace();
@@ -170,7 +172,7 @@ class MainCommand extends NewMcCommand.HasSub {
 
             try {
                 info = api.getWhitelistService().query(profile.uuid());
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 plugin.getSLF4JLogger().error("Fail to query whitelist", e);
                 sd.error("查询白名单失败！");
                 sd.exception(e);
@@ -187,7 +189,7 @@ class MainCommand extends NewMcCommand.HasSub {
             final boolean remove;
             try {
                 remove = api.getWhitelistService().remove(profile.uuid());
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 plugin.getSLF4JLogger().error("Fail to remove whitelist", e);
                 sd.error("删除白名单失败！");
                 sd.exception(e);
@@ -336,7 +338,7 @@ class MainCommand extends NewMcCommand.HasSub {
                 final WhitelistInfo info;
                 try {
                     info = api.getWhitelistService().query(offlinePlayer.getUniqueId());
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     plugin.getSLF4JLogger().error("Fail to query whitelist", e);
                     sd.error("查询白名单失败！");
                     sd.exception(e);
@@ -412,7 +414,7 @@ class MainCommand extends NewMcCommand.HasSub {
 
                 try {
                     info = api.getWhitelistCodeService().create(player.getUniqueId(), player.getName());
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     plugin.getSLF4JLogger().error("Fail to crate whitelist code");
                     ms.error("生成白名单验证码失败！");
                     ms.exception(e);

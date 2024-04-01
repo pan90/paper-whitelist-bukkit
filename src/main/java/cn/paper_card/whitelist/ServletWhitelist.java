@@ -4,6 +4,7 @@ import cn.paper_card.MojangProfileApi;
 import cn.paper_card.mc_command.NewMcCommand;
 import cn.paper_card.paper_whitelist.api.AlreadyWhitelistedException;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
+import cn.paper_card.paper_whitelist.api.WhitelistService;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -139,12 +140,14 @@ class ServletWhitelist extends HttpServlet {
             return new Response(ErrorCode.ServiceUnavailable, "WhitelistApiImpl is null!");
         }
 
-        final WhitelistServiceImpl service = api.getWhitelistService();
+        final WhitelistService service = api.getWhitelistService();
 
         final int count;
 
         try {
-            count = service.queryCount();
+            // todo
+            count = (int) (Math.random() * 100);
+            if (count % 2 == 0) throw new SQLException("TODO");
         } catch (SQLException e) {
             p.getSLF4JLogger().error("Fail to query whitelist count", e);
             return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist count: " + e);
@@ -156,7 +159,7 @@ class ServletWhitelist extends HttpServlet {
 
             try {
                 list = service.queryPage(size, (page - 1) * size);
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 p.getSLF4JLogger().error("Fail to query whitelist", e);
                 return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist: " + e);
             }
@@ -195,7 +198,7 @@ class ServletWhitelist extends HttpServlet {
 
         try {
             info = api.getWhitelistService().query(uuid);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             p.getSLF4JLogger().error("Fail to query whitelist", e);
             return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist: " + e);
         }
@@ -226,13 +229,13 @@ class ServletWhitelist extends HttpServlet {
             return new Response(ErrorCode.ServiceUnavailable, "WhitelistApiImpl is null!");
         }
 
-        final WhitelistServiceImpl ser = api.getWhitelistService();
+        final WhitelistService ser = api.getWhitelistService();
 
         final WhitelistInfo info;
 
         try {
             info = ser.query(uuid);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             p.getSLF4JLogger().error("Fail to query whitelist", e);
             return new Response(ErrorCode.ServiceUnavailable, "Fail to query whitelist: " + e);
         }
@@ -245,7 +248,7 @@ class ServletWhitelist extends HttpServlet {
 
         try {
             remove = ser.remove(uuid);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             p.getSLF4JLogger().error("Fail to remove whitelist", e);
             return new Response(ErrorCode.ServiceUnavailable, "Fail to remove whitelist: " + e);
         }
@@ -311,7 +314,7 @@ class ServletWhitelist extends HttpServlet {
             return new Response(ErrorCode.ServiceUnavailable, "WhitelistApiImpl is null!");
         }
 
-        final WhitelistServiceImpl service = api.getWhitelistService();
+        final WhitelistService service = api.getWhitelistService();
 
         if (remark == null) {
 
@@ -339,11 +342,11 @@ class ServletWhitelist extends HttpServlet {
 
         try {
             service.add(info);
-        } catch (SQLException e) {
-            p.getSLF4JLogger().error("Fail to add whitelist", e);
-            return new Response(ErrorCode.ServiceUnavailable, e.toString());
         } catch (AlreadyWhitelistedException e) {
             return new Response(ErrorCode.AlreadyWhitelisted, "已经是白名单，无需重复添加", Util.toJson(e.getWhitelistInfo(), p.getServer()));
+        } catch (Exception e) {
+            p.getSLF4JLogger().error("Fail to add whitelist", e);
+            return new Response(ErrorCode.ServiceUnavailable, e.toString());
         }
 
         return new Response(ErrorCode.Ok, "OK", Util.toJson(info, p.getServer()));

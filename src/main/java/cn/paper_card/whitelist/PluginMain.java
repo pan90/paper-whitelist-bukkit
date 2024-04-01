@@ -25,9 +25,12 @@ public final class PluginMain extends JavaPlugin {
 
     private final @NotNull MojangProfileApi mojangProfileApi;
 
+    private final @NotNull ConfigManager configManager;
+
     public PluginMain() {
         this.taskScheduler = UniversalScheduler.getScheduler(this);
         this.mojangProfileApi = new MojangProfileApi();
+        this.configManager = new ConfigManager(this);
     }
 
     void registerApi() {
@@ -52,6 +55,12 @@ public final class PluginMain extends JavaPlugin {
         this.registerApi();
 
         new MainCommand(this).register(this);
+
+        this.configManager.getAll();
+        this.configManager.save();
+
+        final String apiBase = this.configManager.getApiBase();
+        this.getSLF4JLogger().info("api base: " + apiBase);
     }
 
     @Override
@@ -76,5 +85,9 @@ public final class PluginMain extends JavaPlugin {
 
     @NotNull TaskScheduler getTaskScheduler() {
         return this.taskScheduler;
+    }
+
+    @NotNull ConfigManager getConfigManager() {
+        return this.configManager;
     }
 }
