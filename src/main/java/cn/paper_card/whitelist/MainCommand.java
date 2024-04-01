@@ -18,7 +18,6 @@ import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,6 +37,7 @@ class MainCommand extends NewMcCommand.HasSub {
         this.addSub(new Get());
         this.addSub(new Code());
         this.addSub(new CommandList(this));
+        this.addSub(new Reload());
     }
 
     @NotNull PluginMain getPlugin() {
@@ -454,6 +454,38 @@ class MainCommand extends NewMcCommand.HasSub {
                 sender.sendMessage(text.build().color(NamedTextColor.GREEN));
             });
 
+            return true;
+        }
+
+        @Override
+        public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+            return null;
+        }
+    }
+
+    class Reload extends NewMcCommand {
+
+        private final @NotNull Permission permission;
+
+        protected Reload() {
+            super("reload");
+            this.permission = this.addSubPermission(plugin.getServer().getPluginManager(), MainCommand.this.permission);
+        }
+
+        @Override
+        protected void appendPrefix(TextComponent.@NotNull Builder text) {
+            MainCommand.this.appendPrefix(text);
+        }
+
+        @Override
+        protected boolean canExecute(@NotNull CommandSender commandSender) {
+            return commandSender.hasPermission(this.permission);
+        }
+
+        @Override
+        public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+            plugin.getConfigManager().reload();
+            new Sender(sender).info("已重载配置");
             return true;
         }
 
