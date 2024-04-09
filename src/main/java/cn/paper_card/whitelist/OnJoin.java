@@ -26,9 +26,10 @@ class OnJoin implements Listener {
 
         // 没有白名单则踢出
         if (hasProperty) {
-            plugin.getTaskScheduler().runTaskLater(() -> {
-                player.kick(OnPreLogin.kickMessageNotWhitelist(null, null, player.getName(), player.getUniqueId()));
-            }, 1);
+            plugin.getTaskScheduler().runTaskLater(() ->
+                            player.kick(OnPreLogin.kickMessageNotWhitelist(null, null,
+                                    player.getName(), player.getUniqueId())),
+                    1);
         }
     }
 }
