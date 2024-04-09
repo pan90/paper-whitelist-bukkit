@@ -81,7 +81,7 @@ public final class PluginMain extends JavaPlugin {
             }, this);
         }
 
-        pm.registerEvents(new OnJoin(), this);
+        pm.registerEvents(new OnJoin(this), this);
     }
 
     @Override

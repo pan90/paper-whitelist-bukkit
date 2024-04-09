@@ -17,6 +17,7 @@ import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -133,62 +134,45 @@ class MainCommand extends NewMcCommand.HasSub {
             );
 
             try {
-                api.getWhitelistService().add(info);
+                api.getLocalWhitelist().update(info);
             } catch (Exception e) {
                 plugin.getSLF4JLogger().error("Fail to add whitelist", e);
-                sd.error("添加白名单失败！");
+                sd.error("添加本地白名单失败！");
                 sd.exception(e);
                 return;
             }
             final TextComponent.Builder text = Component.text();
             this.appendPrefix(text);
             text.appendSpace();
-            text.append(Component.text("添加白名单成功 :D"));
+            text.append(Component.text("添加本地白名单成功 :D"));
             Util.appendInfo(text, info, profile.name());
 
             sender.sendMessage(text.build().color(NamedTextColor.GREEN));
         }
 
         // 删除白名单
-        private void doRemove(@NotNull WhitelistApiImpl api, @NotNull MojangProfileApi.Profile profile, @NotNull Sender sd, @NotNull CommandSender sender) {
+        private void doRemove(@NotNull WhitelistApiImpl api, @NotNull String argPlayer, @NotNull MojangProfileApi.Profile profile, @NotNull Sender sd, @NotNull CommandSender sender) {
             // 先查询
             final WhitelistInfo info;
 
             try {
-                info = api.getWhitelistService().query(profile.uuid());
-            } catch (Exception e) {
-                plugin.getSLF4JLogger().error("Fail to query whitelist", e);
-                sd.error("查询白名单失败！");
-                sd.exception(e);
-                return;
-            }
-
-            if (info == null) {
-                sd.warning("玩家 %s 没有白名单".formatted(profile.name()));
-                return;
-            }
-
-            // 删除
-
-            final boolean remove;
-            try {
-                remove = api.getWhitelistService().remove(profile.uuid());
-            } catch (Exception e) {
+                info = api.getLocalWhitelist().remove(profile.uuid());
+            } catch (SQLException e) {
                 plugin.getSLF4JLogger().error("Fail to remove whitelist", e);
                 sd.error("删除白名单失败！");
                 sd.exception(e);
                 return;
             }
 
-            if (!remove) {
-                sd.error("没有任何数据被删除！");
+            if (info == null) {
+                sd.warning("%s 没有添加本地白名单！".formatted(argPlayer));
                 return;
             }
 
             final TextComponent.Builder text = Component.text();
             this.appendPrefix(text);
             text.appendSpace();
-            text.append(Component.text("删除白名单成功 :D"));
+            text.append(Component.text("删除本地白名单成功 :D"));
             Util.appendInfo(text, info, profile.name());
 
             sender.sendMessage(text.build().color(NamedTextColor.GREEN));
@@ -252,7 +236,7 @@ class MainCommand extends NewMcCommand.HasSub {
                 if (this.isAdd) {
                     this.doAdd(sd, profile, sender, api);
                 } else {
-                    this.doRemove(api, profile, sd, sender);
+                    this.doRemove(api, argPlayer, profile, sd, sender);
                 }
             });
 

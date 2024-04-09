@@ -48,6 +48,17 @@ class LocalWhitelist {
         return this.table;
     }
 
+    @Nullable WhitelistInfo remove(@NotNull UUID uuid) throws SQLException {
+        synchronized (this) {
+            final CacheTable t = this.getTable();
+            final WhitelistInfo info = t.query(uuid);
+
+            if (info != null) t.delete(info.userId());
+            
+            return info;
+        }
+    }
+
     boolean delete(@NotNull UUID uuid) throws SQLException {
         synchronized (this) {
             final CacheTable t = this.getTable();

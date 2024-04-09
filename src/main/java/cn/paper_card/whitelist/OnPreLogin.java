@@ -146,16 +146,19 @@ class OnPreLogin implements Listener {
 
         } catch (Exception e) {
 
+            this.plugin.getSLF4JLogger().warn("无法查询云端白名单", e);
+
+            this.plugin.getSLF4JLogger().info("使用本地白名单...");
+
             // 查询本地
             try {
                 whitelistInfo = api.getLocalWhitelist().query(event.getUniqueId());
-            } catch (SQLException ignored) {
-                this.plugin.getSLF4JLogger().warn("无法查询本地白名单", e);
+            } catch (SQLException ex) {
+                this.plugin.getSLF4JLogger().warn("无法查询本地白名单", ex);
             }
 
             if (whitelistInfo == null) {
                 final String msg = "无法查询白名单，请稍后重新连接";
-                this.plugin.getSLF4JLogger().error(msg, e);
                 this.kickWhenException(event, new Exception(msg, e));
                 return;
             }
@@ -188,6 +191,9 @@ class OnPreLogin implements Listener {
         } else {
             this.kickWhitelistCode(event, null, suffix);
         }
+
+
+//        event.setLoginResult(AsyncPlayerPreLoginEvent.Result.ALLOWED);
     }
 
     @EventHandler
