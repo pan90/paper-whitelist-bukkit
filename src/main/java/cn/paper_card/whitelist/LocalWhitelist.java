@@ -18,27 +18,29 @@ class LocalWhitelist {
     }
 
     void destroy() throws SQLException {
-        final CacheTable t = this.table;
+        synchronized (this) {
+            final CacheTable t = this.table;
 
-        this.table = null;
+            this.table = null;
 
-        SQLException exception = null;
+            SQLException exception = null;
 
-        if (t != null) {
+            if (t != null) {
+                try {
+                    t.close();
+                } catch (SQLException e) {
+                    exception = e;
+                }
+            }
+
             try {
-                t.close();
+                this.connection.close();
             } catch (SQLException e) {
                 exception = e;
             }
-        }
 
-        try {
-            this.connection.close();
-        } catch (SQLException e) {
-            exception = e;
+            if (exception != null) throw exception;
         }
-
-        if (exception != null) throw exception;
     }
 
     private @NotNull CacheTable getTable() throws SQLException {
@@ -54,7 +56,7 @@ class LocalWhitelist {
             final WhitelistInfo info = t.query(uuid);
 
             if (info != null) t.delete(info.userId());
-            
+
             return info;
         }
     }
