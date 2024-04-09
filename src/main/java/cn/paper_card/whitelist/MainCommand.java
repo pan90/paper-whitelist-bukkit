@@ -130,7 +130,7 @@ class MainCommand extends NewMcCommand.HasSub {
                             profile.name(),
                             sender.getName()
                     ),
-                    System.currentTimeMillis()
+                    System.currentTimeMillis() / 1000
             );
 
             try {

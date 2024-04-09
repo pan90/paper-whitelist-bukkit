@@ -158,7 +158,7 @@ class Util {
 
         text.appendNewline();
         text.append(Component.text("添加时间："));
-        text.append(copyable(dateFormat().format(info.createTime())));
+        text.append(copyable(dateFormat().format(info.createTime() * 1000)));
 
         text.appendNewline();
         text.append(Component.text("备注："));
