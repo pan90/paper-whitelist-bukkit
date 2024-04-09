@@ -23,10 +23,13 @@ class LocalWhitelist {
         this.table = null;
 
         SQLException exception = null;
-        try {
-            t.close();
-        } catch (SQLException e) {
-            exception = e;
+
+        if (t != null) {
+            try {
+                t.close();
+            } catch (SQLException e) {
+                exception = e;
+            }
         }
 
         try {
