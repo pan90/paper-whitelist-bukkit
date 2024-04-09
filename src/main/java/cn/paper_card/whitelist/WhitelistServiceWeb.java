@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
 import java.util.UUID;
 
 class WhitelistServiceWeb implements WhitelistService {
@@ -36,13 +35,14 @@ class WhitelistServiceWeb implements WhitelistService {
         final JsonElement uuidEle = jsonObject.get("uuid");
         final JsonElement remarkEle = jsonObject.get("remark");
         final JsonElement createTimeEle = jsonObject.get("c_time");
-//        final JsonElement nameEle = jsonObject.get("name");
+        final JsonElement nameEle = jsonObject.get("name");
 
         if (uuidEle == null) return null;
 
         final UUID uuid = UUID.fromString(uuidEle.getAsString());
 
         return new WhitelistInfo(
+                nameEle.getAsString(),
                 uuid,
                 remarkEle.getAsString(),
                 createTimeEle != null ? createTimeEle.getAsLong() : -1
@@ -75,15 +75,5 @@ class WhitelistServiceWeb implements WhitelistService {
         connection.disconnect();
 
         return parse(jsonObject);
-    }
-
-    @Override
-    public @NotNull List<WhitelistInfo> queryPage(int limit, int offset) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public @NotNull List<WhitelistInfo> search(@NotNull String keyWord, int limit, int offset) {
-        throw new UnsupportedOperationException();
     }
 }

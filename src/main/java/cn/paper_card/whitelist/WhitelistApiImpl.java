@@ -1,51 +1,39 @@
 package cn.paper_card.whitelist;
 
-import cn.paper_card.database.api.DatabaseApi;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
-import cn.paper_card.paper_whitelist.api.WhitelistCodeService;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.UUID;
 
 class WhitelistApiImpl implements PaperWhitelistApi {
 
     private final @NotNull WhitelistServiceWeb whitelistService;
-    private final @NotNull WhitelistCodeService whitelistCodeService;
 
-    private final @NotNull PluginMain plugin;
+    private final @NotNull WhitelistCodeServiceWeb whitelistCodeService;
 
     private final @NotNull OnPreLogin onPreLogin;
 
-    WhitelistApiImpl(@NotNull DatabaseApi.MySqlConnection connection, @NotNull PluginMain plugin) {
-        this.whitelistService = new WhitelistServiceWeb(plugin);
-        this.whitelistCodeService = new WhitelistCodeServiceWeb(plugin);
+    private final @NotNull LocalWhitelist localWhitelist;
+
+    private final @NotNull PluginMain plugin;
+
+    WhitelistApiImpl(@NotNull PluginMain plugin, @NotNull Connection connection) {
         this.plugin = plugin;
+        this.whitelistService = new WhitelistServiceWeb(plugin);
         this.onPreLogin = new OnPreLogin(plugin);
+        this.whitelistCodeService = new WhitelistCodeServiceWeb(plugin);
+        this.localWhitelist = new LocalWhitelist(connection);
     }
 
     @Override
     public @NotNull WhitelistServiceWeb getWhitelistService() {
         return this.whitelistService;
-    }
-
-    @Override
-    public @NotNull WhitelistCodeService getWhitelistCodeService() {
-        return this.whitelistCodeService;
-    }
-
-
-    @Override
-    public @Nullable Object getServletContextHandler() {
-        final ServletContextHandler handler = new ServletContextHandler();
-        handler.setAttribute("plugin", this.plugin);
-        handler.setContextPath("/api");
-        handler.addServlet(new ServletHolder(new ServletWhitelist()), "/whitelist");
-        handler.addServlet(new ServletHolder(new ServletWhitelistCode()), "/whitelist-code");
-        return handler;
     }
 
     void onPreLogin(@NotNull AsyncPlayerPreLoginEvent event, @Nullable TextComponent suffix) {
@@ -61,18 +49,20 @@ class WhitelistApiImpl implements PaperWhitelistApi {
         }
     }
 
-    void destroy() {
-        final Logger l = this.plugin.getSLF4JLogger();
-//        try {
-//            this.whitelistService.destroy();
-//        } catch (SQLException e) {
-//            l.error("", e);
-//        }
+    @NotNull WhitelistCodeInfo requestWhitelistCode(@NotNull UUID uuid, @NotNull String name) throws IOException {
+        return this.whitelistCodeService.create(uuid, name);
+    }
 
-//        try {
-//            this.whitelistCodeService.destroy();
-//        } catch (SQLException e) {
-//            l.error("", e);
-//        }
+    @NotNull LocalWhitelist getLocalWhitelist() {
+        return this.localWhitelist;
+    }
+
+    void destroy() {
+
+        try {
+            this.localWhitelist.destroy();
+        } catch (SQLException e) {
+            this.plugin.getSLF4JLogger().error("", e);
+        }
     }
 }

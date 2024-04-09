@@ -1,19 +1,16 @@
 package cn.paper_card.whitelist;
 
-import cn.paper_card.paper_whitelist.api.WhitelistCodeInfo;
-import cn.paper_card.paper_whitelist.api.WhitelistCodeService;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.UUID;
 
-class WhitelistCodeServiceWeb implements WhitelistCodeService {
+class WhitelistCodeServiceWeb {
 
     private final @NotNull PluginMain plugin;
 
@@ -50,7 +47,6 @@ class WhitelistCodeServiceWeb implements WhitelistCodeService {
         );
     }
 
-    @Override
     public @NotNull WhitelistCodeInfo create(@NotNull UUID id, @NotNull String name) throws IOException {
         final HttpURLConnection connection = getHttpURLConnection();
 
@@ -82,25 +78,5 @@ class WhitelistCodeServiceWeb implements WhitelistCodeService {
 
         connection.connect();
         return connection;
-    }
-
-    @Override
-    public @Nullable WhitelistCodeInfo take(int code) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public @Nullable WhitelistCodeInfo query(@NotNull UUID id) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public @Nullable WhitelistCodeInfo take(@NotNull UUID id) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int deleteExpires() {
-        throw new UnsupportedOperationException();
     }
 }

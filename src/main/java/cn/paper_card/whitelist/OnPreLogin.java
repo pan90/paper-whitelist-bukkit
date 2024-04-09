@@ -1,7 +1,7 @@
 package cn.paper_card.whitelist;
 
-import cn.paper_card.paper_whitelist.api.WhitelistCodeInfo;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -12,6 +12,7 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 class OnPreLogin implements Listener {
@@ -27,7 +28,7 @@ class OnPreLogin implements Listener {
 //    }
      */
 
-    void appendPlayerAndTime(@NotNull TextComponent.Builder text, @NotNull String name, @NotNull UUID uuid) {
+    static void appendPlayerAndTime(@NotNull TextComponent.Builder text, @NotNull String name, @NotNull UUID uuid) {
         text.appendNewline();
         text.append(Component.text("游戏角色：%s (%s)".formatted(name, uuid)).color(NamedTextColor.GRAY));
 
@@ -36,8 +37,7 @@ class OnPreLogin implements Listener {
                 .color(NamedTextColor.GRAY));
     }
 
-    void kickWhenException(@NotNull AsyncPlayerPreLoginEvent event, @NotNull Throwable e) {
-
+    static @NotNull TextComponent kickMessageWhenException(@NotNull Throwable e, @NotNull String name, @NotNull UUID uuid) {
         final TextComponent.Builder text = Component.text();
         text.append(Component.text("[ PaperCard | 系统错误 ]")
                 .color(NamedTextColor.DARK_RED).decorate(TextDecoration.BOLD));
@@ -47,13 +47,17 @@ class OnPreLogin implements Listener {
             text.append(Component.text(t.toString()).color(NamedTextColor.RED));
         }
 
-        this.appendPlayerAndTime(text, event.getName(), event.getUniqueId());
+        appendPlayerAndTime(text, name, uuid);
 
-        event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_OTHER);
-        event.kickMessage(text.build());
+        return text.build();
     }
 
-    void kickWhitelistCode(@NotNull AsyncPlayerPreLoginEvent event, @Nullable WhitelistCodeInfo info, @Nullable TextComponent suffix) {
+    void kickWhenException(@NotNull AsyncPlayerPreLoginEvent event, @NotNull Throwable e) {
+        event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_OTHER);
+        event.kickMessage(kickMessageWhenException(e, event.getName(), event.getUniqueId()));
+    }
+
+    static @NotNull TextComponent kickMessageNotWhitelist(@Nullable TextComponent suffix, @Nullable WhitelistCodeInfo info, @NotNull String name, @NotNull UUID uuid) {
         final TextComponent.Builder text = Component.text();
 
         text.append(Component.text("[ PaperCard | 白名单 ]")
@@ -80,7 +84,7 @@ class OnPreLogin implements Listener {
             text.appendNewline();
             text.append(Component.text("验证码有效时间："));
             text.append(Component.text(Util.minutesAndSeconds(
-                            (info.expires() - info.createTime())
+                            (info.expireTime() - info.createTime())
                     ))
                     .color(NamedTextColor.YELLOW));
             text.append(Component.text("内，被使用后立即失效"));
@@ -89,10 +93,41 @@ class OnPreLogin implements Listener {
             text.append(Component.text("重连将生成新验证码，并且原验证码立即失效").color(NamedTextColor.YELLOW));
         }
 
-        this.appendPlayerAndTime(text, event.getName(), event.getUniqueId());
+        appendPlayerAndTime(text, name, uuid);
 
+        return text.build();
+    }
+
+    void kickWhitelistCode(@NotNull AsyncPlayerPreLoginEvent event, @Nullable WhitelistCodeInfo info, @Nullable TextComponent suffix) {
         event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST);
-        event.kickMessage(text.build().color(NamedTextColor.GREEN));
+        event.kickMessage(kickMessageNotWhitelist(suffix, info, event.getName(), event.getUniqueId()));
+    }
+
+    private void syncCache(@NotNull WhitelistApiImpl api, @Nullable WhitelistInfo info, @NotNull UUID uuid, @NotNull String name) {
+
+        this.plugin.getTaskScheduler().runTaskAsynchronously(() -> {
+            if (info != null) {
+                try {
+                    api.getLocalWhitelist().update(info);
+                } catch (SQLException e) {
+                    plugin.getSLF4JLogger().warn("", e);
+                    return;
+                }
+                plugin.getSLF4JLogger().info("已更新本地白名单 {remark: %s}".formatted(info.remark()));
+            } else {
+                // 删除
+                final boolean delete;
+
+                try {
+                    delete = api.getLocalWhitelist().delete(uuid);
+                } catch (SQLException e) {
+                    plugin.getSLF4JLogger().warn("", e);
+                    return;
+                }
+                plugin.getSLF4JLogger().info("删除本地 %s 的本地白名单：%s".formatted(name, delete));
+            }
+        });
+
     }
 
     void onPreLogin(@NotNull AsyncPlayerPreLoginEvent event, @Nullable TextComponent suffix) {
@@ -102,15 +137,28 @@ class OnPreLogin implements Listener {
             return;
         }
 
-        final WhitelistInfo whitelistInfo;
-
+        WhitelistInfo whitelistInfo = null;
         try {
             whitelistInfo = api.getWhitelistService().query(event.getUniqueId());
+
+            // 更新缓存
+            this.syncCache(api, whitelistInfo, event.getUniqueId(), event.getName());
+
         } catch (Exception e) {
-            final String msg = "无法查询白名单！";
-            this.plugin.getSLF4JLogger().error(msg, e);
-            this.kickWhenException(event, new Exception(msg, e));
-            return;
+
+            // 查询本地
+            try {
+                whitelistInfo = api.getLocalWhitelist().query(event.getUniqueId());
+            } catch (SQLException ignored) {
+                this.plugin.getSLF4JLogger().warn("无法查询本地白名单", e);
+            }
+
+            if (whitelistInfo == null) {
+                final String msg = "无法查询白名单，请稍后重新连接";
+                this.plugin.getSLF4JLogger().error(msg, e);
+                this.kickWhenException(event, new Exception(msg, e));
+                return;
+            }
         }
 
         if (whitelistInfo != null) {
@@ -121,18 +169,18 @@ class OnPreLogin implements Listener {
         }
 
         // 非白名单
+        // 添加标记
+        event.getPlayerProfile().setProperty(new ProfileProperty("paper-not-whitelist", "true"));
 
         // 生成验证码
         if (plugin.getConfigManager().isGenerateCode()) {
             final WhitelistCodeInfo code;
 
             try {
-                code = api.getWhitelistCodeService().create(event.getUniqueId(), event.getName());
+                code = api.requestWhitelistCode(event.getUniqueId(), event.getName());
             } catch (Exception e) {
-                final String msg = "生成白名单验证码失败！";
+                final String msg = "生成白名单验证码失败，请稍后重试";
                 this.plugin.getSLF4JLogger().error(msg, e);
-
-//                this.kickWhenException(event, new Exception(msg, e));
                 this.kickWhitelistCode(event, null, suffix);
                 return;
             }

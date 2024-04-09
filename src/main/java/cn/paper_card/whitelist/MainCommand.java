@@ -2,7 +2,6 @@ package cn.paper_card.whitelist;
 
 import cn.paper_card.MojangProfileApi;
 import cn.paper_card.mc_command.NewMcCommand;
-import cn.paper_card.paper_whitelist.api.WhitelistCodeInfo;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -36,16 +35,7 @@ class MainCommand extends NewMcCommand.HasSub {
         this.addSub(new AddRemove(false));
         this.addSub(new Get());
         this.addSub(new Code());
-        this.addSub(new CommandList(this));
         this.addSub(new Reload());
-    }
-
-    @NotNull PluginMain getPlugin() {
-        return this.plugin;
-    }
-
-    @NotNull Permission getPermission() {
-        return this.permission;
     }
 
     @Override
@@ -130,10 +120,11 @@ class MainCommand extends NewMcCommand.HasSub {
         private void doAdd(@NotNull Sender sd,
                            @NotNull MojangProfileApi.Profile profile,
                            @NotNull CommandSender sender,
-                           @NotNull String argPlayer,
                            @NotNull WhitelistApiImpl api
         ) {
-            final var info = new WhitelistInfo(profile.uuid(),
+            final var info = new WhitelistInfo(
+                    profile.name(),
+                    profile.uuid(),
                     "游戏名：%s，管理员%s使用指令添加".formatted(
                             profile.name(),
                             sender.getName()
@@ -143,14 +134,7 @@ class MainCommand extends NewMcCommand.HasSub {
 
             try {
                 api.getWhitelistService().add(info);
-            }
-//            catch (AlreadyWhitelistedException e) {
-//
-//                sd.warning("该玩家 %s 已添加白名单，无需重复添加".formatted(argPlayer));
-//
-//                return;
-//            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 plugin.getSLF4JLogger().error("Fail to add whitelist", e);
                 sd.error("添加白名单失败！");
                 sd.exception(e);
@@ -227,7 +211,6 @@ class MainCommand extends NewMcCommand.HasSub {
                 return true;
             }
 
-
             plugin.getTaskScheduler().runTaskAsynchronously(() -> {
                 final OfflinePlayer offlinePlayer = parseOfflinePlayerName(argPlayer, plugin.getServer());
                 MojangProfileApi.Profile profile;
@@ -267,7 +250,7 @@ class MainCommand extends NewMcCommand.HasSub {
                 }
 
                 if (this.isAdd) {
-                    this.doAdd(sd, profile, sender, argPlayer, api);
+                    this.doAdd(sd, profile, sender, api);
                 } else {
                     this.doRemove(api, profile, sd, sender);
                 }
@@ -413,7 +396,7 @@ class MainCommand extends NewMcCommand.HasSub {
                 final WhitelistCodeInfo info;
 
                 try {
-                    info = api.getWhitelistCodeService().create(player.getUniqueId(), player.getName());
+                    info = api.requestWhitelistCode(player.getUniqueId(), player.getName());
                 } catch (Exception e) {
                     plugin.getSLF4JLogger().error("Fail to crate whitelist code");
                     ms.error("生成白名单验证码失败！");
@@ -433,7 +416,7 @@ class MainCommand extends NewMcCommand.HasSub {
                         .color(NamedTextColor.RED));
                 text.append(Component.text("验证码有效时间："));
                 text.append(Component.text(Util.minutesAndSeconds(
-                                (info.expires() - info.createTime()) / 1000L
+                                (info.expireTime() - info.createTime())
                         ))
                         .color(NamedTextColor.YELLOW));
                 text.append(Component.text("内，验证码被使用后立即失效。"));

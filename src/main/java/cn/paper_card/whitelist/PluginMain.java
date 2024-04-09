@@ -5,18 +5,17 @@ import cn.paper_card.database.api.DatabaseApi;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
 import com.github.Anon8281.universalScheduler.UniversalScheduler;
 import com.github.Anon8281.universalScheduler.scheduling.schedulers.TaskScheduler;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-// 1 查询自己的白名单信息，/whitelist
-// 2 /whitelist list [页码] 指令
-// 3 /whitelist code 生成自己的白名单验证码
-// whitelist list 命令应该可以显示共多少页
-// 完善白名单验证码拒绝页面
-// todo: 并未测试没有PaperJetty插件的情况
-// todo: 未考虑到没哟PaperPreLogin插件的情况
+import java.sql.SQLException;
 
 public final class PluginMain extends JavaPlugin {
 
@@ -33,26 +32,32 @@ public final class PluginMain extends JavaPlugin {
         this.configManager = new ConfigManager(this);
     }
 
-    void registerApi() {
+    void registerApi() throws SQLException {
         if (this.whitelistApi != null) return;
 
         final DatabaseApi api = this.getServer().getServicesManager().load(DatabaseApi.class);
         if (api == null) throw new RuntimeException("未连接到DatabaseApi！");
 
-        final DatabaseApi.MySqlConnection connection = api.getRemoteMySQL().getConnectionImportant();
-
-        this.whitelistApi = new WhitelistApiImpl(connection, this);
+        this.whitelistApi = new WhitelistApiImpl(this, api.getLocalSQLite().connectImportant());
         this.getServer().getServicesManager().register(PaperWhitelistApi.class, this.whitelistApi, this, ServicePriority.Highest);
     }
 
     @Override
     public void onLoad() {
-        this.registerApi();
+        try {
+            this.registerApi();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void onEnable() {
-        this.registerApi();
+        try {
+            this.registerApi();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         new MainCommand(this).register(this);
 
@@ -61,6 +66,22 @@ public final class PluginMain extends JavaPlugin {
 
         final String apiBase = this.configManager.getApiBase();
         this.getSLF4JLogger().info("api base: " + apiBase);
+
+        // 注册事件监听
+        final PluginManager pm = this.getServer().getPluginManager();
+        final Plugin p = pm.getPlugin("PaperPreLogin");
+        if (p == null) {
+            pm.registerEvents(new Listener() {
+                @EventHandler
+                public void on(@NotNull AsyncPlayerPreLoginEvent event) {
+                    final WhitelistApiImpl api = getWhitelistApi();
+                    if (api == null) return;
+                    api.onPreLogin(event, null);
+                }
+            }, this);
+        }
+
+        pm.registerEvents(new OnJoin(), this);
     }
 
     @Override
