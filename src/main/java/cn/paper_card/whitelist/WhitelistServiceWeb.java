@@ -1,5 +1,7 @@
 package cn.paper_card.whitelist;
 
+import cn.paper_card.client.api.PaperClientApi;
+import cn.paper_card.client.api.Util;
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
 import cn.paper_card.paper_whitelist.api.WhitelistService;
 import com.google.gson.Gson;
@@ -62,14 +64,18 @@ class WhitelistServiceWeb implements WhitelistService {
 
     @Override
     public @Nullable WhitelistInfo query(@NotNull UUID userId) throws IOException {
-        final URL url = new URL(this.plugin.getConfigManager().getApiBase() + "/whitelist/" + userId);
+
+        final PaperClientApi api = plugin.getPaperClientApi();
+        if (api == null) throw new IOException("PaperClientApi is null!");
+
+        final URL url = new URL(api.getApiBase() + "/whitelist/" + userId);
 
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setConnectTimeout(2000);
         connection.setReadTimeout(2000);
 
-        final String jsonStr = Util.readContent(connection);
+        final String jsonStr = Util.readData(connection);
         final JsonObject jsonObject = this.gson.fromJson(jsonStr, JsonObject.class);
 
         connection.disconnect();

@@ -1,6 +1,7 @@
 package cn.paper_card.whitelist;
 
 import cn.paper_card.MojangProfileApi;
+import cn.paper_card.client.api.PaperClientApi;
 import cn.paper_card.database.api.DatabaseApi;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
 import com.github.Anon8281.universalScheduler.UniversalScheduler;
@@ -25,6 +26,8 @@ public final class PluginMain extends JavaPlugin {
     private final @NotNull MojangProfileApi mojangProfileApi;
 
     private final @NotNull ConfigManager configManager;
+
+    private PaperClientApi paperClientApi = null;
 
     public PluginMain() {
         this.taskScheduler = UniversalScheduler.getScheduler(this);
@@ -64,9 +67,6 @@ public final class PluginMain extends JavaPlugin {
         this.configManager.getAll();
         this.configManager.save();
 
-        final String apiBase = this.configManager.getApiBase();
-        this.getSLF4JLogger().info("api base: " + apiBase);
-
         // 注册事件监听
         final PluginManager pm = this.getServer().getPluginManager();
         final Plugin p = pm.getPlugin("PaperPreLogin");
@@ -82,6 +82,8 @@ public final class PluginMain extends JavaPlugin {
         }
 
         pm.registerEvents(new OnJoin(this), this);
+
+        this.paperClientApi = this.getServer().getServicesManager().load(PaperClientApi.class);
     }
 
     @Override
@@ -94,6 +96,10 @@ public final class PluginMain extends JavaPlugin {
         if (api != null) api.destroy();
 
         this.taskScheduler.cancelTasks(this);
+    }
+
+    @Nullable PaperClientApi getPaperClientApi() {
+        return this.paperClientApi;
     }
 
     @Nullable WhitelistApiImpl getWhitelistApi() {

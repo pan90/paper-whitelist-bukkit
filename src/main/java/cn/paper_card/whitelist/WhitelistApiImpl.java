@@ -1,5 +1,6 @@
 package cn.paper_card.whitelist;
 
+import cn.paper_card.client.api.PaperResponseError;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
@@ -49,7 +50,7 @@ class WhitelistApiImpl implements PaperWhitelistApi {
         }
     }
 
-    @NotNull WhitelistCodeInfo requestWhitelistCode(@NotNull UUID uuid, @NotNull String name) throws IOException {
+    @NotNull WhitelistCodeInfo requestWhitelistCode(@NotNull UUID uuid, @NotNull String name) throws IOException, PaperResponseError {
         return this.whitelistCodeService.create(uuid, name);
     }
 

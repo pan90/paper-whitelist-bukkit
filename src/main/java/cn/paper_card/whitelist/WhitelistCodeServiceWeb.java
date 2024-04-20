@@ -1,24 +1,20 @@
 package cn.paper_card.whitelist;
 
-import com.google.gson.Gson;
+import cn.paper_card.client.api.PaperClientApi;
+import cn.paper_card.client.api.PaperResponseError;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.UUID;
 
 class WhitelistCodeServiceWeb {
 
     private final @NotNull PluginMain plugin;
 
-    private final @NotNull Gson gson;
-
     WhitelistCodeServiceWeb(@NotNull PluginMain plugin) {
         this.plugin = plugin;
-        this.gson = new Gson();
     }
 
     private @NotNull WhitelistCodeInfo parse(@NotNull JsonObject json) {
@@ -36,7 +32,7 @@ class WhitelistCodeServiceWeb {
         final JsonElement uuidEle = json.get("uuid");
         final JsonElement nameEle = json.get("name");
         final JsonElement createTimeEle = json.get("c_time");
-        final JsonElement expiresEle = json.get("expires");
+        final JsonElement expiresEle = json.get("e_time");
 
         return new WhitelistCodeInfo(
                 codeEle.getAsInt(),
@@ -47,36 +43,23 @@ class WhitelistCodeServiceWeb {
         );
     }
 
-    public @NotNull WhitelistCodeInfo create(@NotNull UUID id, @NotNull String name) throws IOException {
-        final HttpURLConnection connection = getHttpURLConnection();
+    public @NotNull WhitelistCodeInfo create(@NotNull UUID id, @NotNull String name) throws IOException, PaperResponseError {
+        final PaperClientApi api = plugin.getPaperClientApi();
+        if (api == null) throw new IOException("PaperClientApi is null!");
 
-        // 发送数据
-        final JsonObject json = new JsonObject();
-        json.addProperty("uuid", id.toString());
-        json.addProperty("name", name);
-        Util.send(connection, json.toString());
+        // 请求参数
+        final JsonObject params = new JsonObject();
+        params.addProperty("uuid", id.toString());
+        params.addProperty("name", name);
 
-        final String jsonStr = Util.readContent(connection);
-        connection.disconnect();
 
-        final JsonObject jsonObject = this.gson.fromJson(jsonStr, JsonObject.class);
+        final JsonElement dataEle;
+        dataEle = api.sendRequest("/whitelist-code", params, "POST");
 
-        return this.parse(jsonObject);
-    }
+        if (dataEle == null) throw new IOException("dataEle is null!");
 
-    @NotNull
-    private HttpURLConnection getHttpURLConnection() throws IOException {
-        final URL url = new URL(this.plugin.getConfigManager().getApiBase() + "/whitelist-code");
+        final JsonObject dataObj = dataEle.getAsJsonObject();
 
-        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setConnectTimeout(2000);
-        connection.setReadTimeout(2000);
-        connection.setDoOutput(true);
-        connection.setDoInput(true);
-        connection.setRequestProperty("paper-token", this.plugin.getConfigManager().getPaperToken());
-
-        connection.connect();
-        return connection;
+        return parse(dataObj);
     }
 }

@@ -1,106 +1,44 @@
 package cn.paper_card.whitelist;
 
 import cn.paper_card.paper_whitelist.api.WhitelistInfo;
-import com.google.gson.JsonObject;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.UUID;
 
 class Util {
 
-    static void close(@NotNull InputStream inputStream, @NotNull InputStreamReader inputStreamReader, @NotNull BufferedReader reader) throws IOException {
-        IOException exception = null;
-        try {
-            reader.close();
-        } catch (IOException e) {
-            exception = e;
-        }
 
-        try {
-            inputStreamReader.close();
-        } catch (IOException e) {
-            exception = e;
-        }
+    /*
+//    static @NotNull JsonObject toJson(@NotNull WhitelistInfo info, @NotNull Server server) {
+//        final JsonObject jsonObject = new JsonObject();
+//        jsonObject.addProperty("uuid", info.userId().toString());
+//        jsonObject.addProperty("remark", info.remark());
+//        jsonObject.addProperty("create_time", info.createTime());
+//        final String name = server.getOfflinePlayer(info.userId()).getName();
+//        jsonObject.addProperty("name", name);
+//        return jsonObject;
+//    }
+     */
 
-        try {
-            inputStream.close();
-        } catch (IOException e) {
-            exception = e;
-        }
-
-        if (exception != null) throw exception;
-    }
-
-    static void send(@NotNull HttpURLConnection connection, @NotNull Object data) throws IOException {
-        final OutputStream out = connection.getOutputStream();
-
-        final PrintStream stream = new PrintStream(out, false, StandardCharsets.UTF_8);
-
-        stream.print(data);
-        stream.flush();
-
-        stream.close();
-        out.close();
-    }
-
-    static @NotNull String readContent(@NotNull HttpURLConnection connection) throws IOException {
-        final InputStream inputStream = connection.getInputStream();
-        final InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-        final BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-
-        String line;
-
-        final StringBuilder builder = new StringBuilder();
-
-        try {
-            while ((line = bufferedReader.readLine()) != null) {
-                builder.append(line);
-                builder.append('\n');
-            }
-        } catch (IOException e) {
-            try {
-                close(inputStream, inputStreamReader, bufferedReader);
-            } catch (IOException ignored) {
-            }
-            throw e;
-        }
-
-        close(inputStream, inputStreamReader, bufferedReader);
-
-        return builder.toString();
-    }
-
-    static @NotNull JsonObject toJson(@NotNull WhitelistInfo info, @NotNull Server server) {
-        final JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("uuid", info.userId().toString());
-        jsonObject.addProperty("remark", info.remark());
-        jsonObject.addProperty("create_time", info.createTime());
-        final String name = server.getOfflinePlayer(info.userId()).getName();
-        jsonObject.addProperty("name", name);
-        return jsonObject;
-    }
-
-    static @NotNull JsonObject toJson(@NotNull WhitelistCodeInfo info) {
-        final JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("code", info.code());
-        jsonObject.addProperty("name", info.name());
-        jsonObject.addProperty("uuid", info.uuid().toString());
-        jsonObject.addProperty("create_time", info.createTime());
-        jsonObject.addProperty("expires", info.expireTime());
-        return jsonObject;
-    }
+    /*
+//    static @NotNull JsonObject toJson(@NotNull WhitelistCodeInfo info) {
+//        final JsonObject jsonObject = new JsonObject();
+//        jsonObject.addProperty("code", info.code());
+//        jsonObject.addProperty("name", info.name());
+//        jsonObject.addProperty("uuid", info.uuid().toString());
+//        jsonObject.addProperty("create_time", info.createTime());
+//        jsonObject.addProperty("expires", info.expireTime());
+//        return jsonObject;
+//    }
+     */
 
     static @NotNull String minutesAndSeconds(long seconds) {
         final long minutes = seconds / 60;

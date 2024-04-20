@@ -121,6 +121,13 @@
 
         <dependency>
             <groupId>com.github.PaperCardDev</groupId>
+            <artifactId>paper-client-api</artifactId>
+            <version>1.2</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.PaperCardDev</groupId>
             <artifactId>mc-command</artifactId>
             <version>2.3</version>
         </dependency>

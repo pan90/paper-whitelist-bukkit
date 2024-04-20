@@ -4,7 +4,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedList;
-import java.util.Objects;
 
 class ConfigManager {
 
@@ -12,40 +11,6 @@ class ConfigManager {
 
     ConfigManager(@NotNull PluginMain plugin) {
         this.plugin = plugin;
-    }
-
-    @NotNull String getPaperToken() {
-        final FileConfiguration c = this.plugin.getConfig();
-
-        @NotNull String path_paper_token = "paper-token";
-        if (!c.contains(path_paper_token, true)) {
-            c.set(path_paper_token, "");
-
-            // 注释
-            final LinkedList<String> comments = new LinkedList<>();
-            comments.add(" ");
-            comments.add("paper token");
-            c.setComments(path_paper_token, comments);
-        }
-
-        return Objects.requireNonNull(c.getString(path_paper_token));
-    }
-
-    @NotNull String getApiBase() {
-        final FileConfiguration c = this.plugin.getConfig();
-
-        @NotNull String path_api_base = "api-base";
-        if (!c.contains(path_api_base, true)) {
-            c.set(path_api_base, "https://paper-card.cn/api");
-
-            // 注释
-            final LinkedList<String> list = new LinkedList<>();
-            list.add(" ");
-            list.add("api base");
-            c.setComments(path_api_base, list);
-        }
-
-        return Objects.requireNonNull(c.getString(path_api_base));
     }
 
     boolean isGenerateCode() {
@@ -68,8 +33,6 @@ class ConfigManager {
     }
 
     void getAll() {
-        this.getApiBase();
-        this.getPaperToken();
         this.isGenerateCode();
     }
 
